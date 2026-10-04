@@ -1,0 +1,20 @@
+# Production: replace with your domain, e.g. example.com. Caddy obtains and renews TLS automatically.
+{$SITE_ADDRESS:http://localhost:8080} {
+	encode zstd gzip
+
+	# Only the web app is public; it proxies /api/* to the API on loopback
+	reverse_proxy 127.0.0.1:7782 {
+		# Hides the short gap while PM2 restarts a process during deploys
+		lb_try_duration 10s
+		lb_try_interval 250ms
+	}
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
+	log {
+		output file /var/log/caddy/app.log
+	}
+}

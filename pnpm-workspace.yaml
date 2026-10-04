@@ -1,0 +1,17 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  "@nestjs/core": true
+  msgpackr-extract: true
+  mongodb-memory-server: false
+  cpu-features: true
+  ssh2: true
+catalog:
+  # Pinned to the newest major that typescript-eslint (<6.1) and ts-jest support. Revisit when peers allow 7.
+  typescript: ~6.0.3
+  # eslint-plugin-react (via eslint-config-next) does not support ESLint 10 yet
+  eslint: ~9.39.0

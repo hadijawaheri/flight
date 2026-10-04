@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Run on the server from the repo root. Stops before the PM2 reload if install or build fails.
+# Note: `next build` rewrites .next while the old web process is still running; keep deploys short and off-peak.
+set -euo pipefail
+
+git pull --ff-only
+corepack enable
+pnpm install --frozen-lockfile
+# INTERNAL_API_URL is baked into the Next rewrites at build time
+INTERNAL_API_URL="http://127.0.0.1:7791" pnpm build
+pm2 startOrReload infra/ecosystem.config.cjs --update-env
+pm2 save
