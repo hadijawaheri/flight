@@ -14,7 +14,7 @@ import { FlightCard } from "@/features/flights/components/flight-card";
 import { FlightSearchBox } from "@/features/flights/components/flight-search-box";
 import { PriceAlertDialog } from "@/features/flights/components/price-alert-dialog";
 import { useFareMatrix, useFlightSearch } from "@/features/flights/queries";
-import { addDays, daysDiff } from "@/lib/format";
+import { addDays, daysDiff, formatFullDate, normalizeDateParam } from "@/lib/format";
 import { paths } from "@/lib/paths";
 
 const AIRPORT_NAMES: Record<string, string> = {
@@ -41,7 +41,20 @@ function FlightsSearchContent() {
   const destination = searchParams.get("destination") || "MHD";
   const originName = AIRPORT_NAMES[origin] || origin;
   const destinationName = AIRPORT_NAMES[destination] || destination;
-  const departureDate = searchParams.get("departureDate") || todayStr;
+  const rawDepartureDate = searchParams.get("departureDate");
+  const departureDate = React.useMemo(
+    () => normalizeDateParam(rawDepartureDate || todayStr),
+    [rawDepartureDate, todayStr],
+  );
+
+  // If URL has a human date (e.g. 'فردا ۱۸:۳۰') or malformed format, clean it canonically
+  React.useEffect(() => {
+    if (rawDepartureDate && rawDepartureDate !== departureDate) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("departureDate", departureDate);
+      router.replace(`${paths.flights}?${params.toString()}`, { scroll: false });
+    }
+  }, [rawDepartureDate, departureDate, router, searchParams]);
   const adults = Number(searchParams.get("adults") || "1");
   const children = Number(searchParams.get("children") || "0");
   const flightClassParam = searchParams.get("flightClass") as "ECONOMY" | "BUSINESS" | null;
@@ -172,9 +185,7 @@ function FlightsSearchContent() {
                 </span>
               </div>
               <span className="text-muted-foreground text-xs">
-                تاریخ پرواز:{" "}
-                {new Date(departureDate).toLocaleDateString("fa-IR", { dateStyle: "full" })} •{" "}
-                {adults} مسافر
+                تاریخ پرواز: {formatFullDate(departureDate)} • {adults} مسافر
               </span>
             </div>
           </div>

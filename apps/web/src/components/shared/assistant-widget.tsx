@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAskAssistant } from "@/features/assistant/queries";
+import { normalizeDateParam } from "@/lib/format";
 import { paths } from "@/lib/paths";
 
 interface Message {
@@ -136,7 +137,7 @@ export function AssistantWidget() {
                     {m.data.deals.map((deal) => (
                       <Link
                         key={deal.id}
-                        href={`${paths.flights}?origin=${deal.originCode}&destination=${deal.destinationCode}&departureDate=${new Date().toISOString().split("T")[0]}`}
+                        href={`${paths.flights}?origin=${deal.originCode}&destination=${deal.destinationCode}&departureDate=${normalizeDateParam(deal.departureDate)}`}
                         onClick={() => setIsOpen(false)}
                         className="bg-background hover:bg-accent flex items-center justify-between rounded-xl border p-2 text-xs transition-colors"
                       >

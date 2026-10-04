@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCheapDeals } from "@/features/deals/queries";
+import { normalizeDateParam } from "@/lib/format";
 import { paths } from "@/lib/paths";
 
 export default function DealsPage() {
@@ -82,7 +83,7 @@ export default function DealsPage() {
                   </div>
 
                   <Link
-                    href={`${paths.flights}?origin=${deal.originCode}&destination=${deal.destinationCode}&departureDate=${deal.departureDate || new Date().toISOString().split("T")[0]}`}
+                    href={`${paths.flights}?origin=${deal.originCode}&destination=${deal.destinationCode}&departureDate=${normalizeDateParam(deal.departureDate)}`}
                   >
                     <Button className="shadow-primary/20 gap-1 font-bold shadow-md">
                       <span>رزرو فوری</span>

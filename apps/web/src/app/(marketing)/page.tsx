@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useBudgetExplore, useCheapDeals } from "@/features/deals/queries";
 import { FlightSearchBox } from "@/features/flights/components/flight-search-box";
+import { normalizeDateParam } from "@/lib/format";
 import { paths } from "@/lib/paths";
 
 export default function HomePage() {
@@ -210,7 +211,7 @@ export default function HomePage() {
                     </div>
 
                     <Link
-                      href={`${paths.flights}?origin=${deal.originCode}&destination=${deal.destinationCode}&departureDate=${new Date().toISOString().split("T")[0]}`}
+                      href={`${paths.flights}?origin=${deal.originCode}&destination=${deal.destinationCode}&departureDate=${normalizeDateParam(deal.departureDate)}`}
                     >
                       <Button size="sm" className="gap-1 font-bold shadow-sm">
                         <span>خرید سریع</span>

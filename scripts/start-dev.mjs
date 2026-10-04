@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import path from "node:path";
 
 const apiRequire = createRequire(new URL("../apps/api/package.json", import.meta.url));
 const { MongoMemoryReplSet } = apiRequire("mongodb-memory-server");
@@ -16,24 +17,34 @@ const replSet = await MongoMemoryReplSet.create({
 console.log("✅ MongoDB ready at:", replSet.getUri("flysmart"));
 
 console.log("[2/3] Starting NestJS API (http://localhost:7781)...");
-const apiProcess = spawn("node", ["dist/main.js"], {
-  cwd: "apps/api",
-  shell: true,
+const apiProcess = spawn(process.execPath, ["--env-file=apps/api/.env", "apps/api/dist/main.js"], {
   stdio: "inherit",
 });
 
 console.log("[3/3] Starting Next.js Web App (http://localhost:7782)...");
-const webProcess = spawn("npx", ["next", "dev", "-p", "7782"], {
+const nextBin = path.resolve("apps/web/node_modules/next/dist/bin/next");
+const webProcess = spawn(process.execPath, [nextBin, "dev", "-p", "7782"], {
   cwd: "apps/web",
-  shell: true,
   stdio: "inherit",
 });
 
 const cleanup = async () => {
   console.log("Stopping FlySmart processes...");
-  apiProcess.kill();
-  webProcess.kill();
-  await replSet.stop();
+  try {
+    apiProcess.kill();
+  } catch {
+    // ignore
+  }
+  try {
+    webProcess.kill();
+  } catch {
+    // ignore
+  }
+  try {
+    await replSet.stop();
+  } catch {
+    // ignore
+  }
   process.exit(0);
 };
 

@@ -13,6 +13,7 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { normalizeDateParam } from "@/lib/format";
 import { paths } from "@/lib/paths";
 
 const POPULAR_AIRPORTS = [
@@ -49,7 +50,9 @@ export function FlightSearchBox({
   const [tripType, setTripType] = React.useState<"ONE_WAY" | "ROUND_TRIP">("ONE_WAY");
   const [origin, setOrigin] = React.useState(initialOrigin);
   const [destination, setDestination] = React.useState(initialDestination);
-  const [departureDate, setDepartureDate] = React.useState(initialDate || todayStr);
+  const [departureDate, setDepartureDate] = React.useState(
+    normalizeDateParam(initialDate || todayStr),
+  );
   const [returnDate, setReturnDate] = React.useState("");
   const [adults, setAdults] = React.useState(1);
   const [children, setChildren] = React.useState(0);
