@@ -101,7 +101,7 @@ export default async function DashboardPage() {
         <Card className="bg-card hover:border-primary/40 flex flex-col justify-between gap-4 border p-5 transition-colors">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <div className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
                 <TicketIcon className="size-5" />
               </div>
               <div className="flex flex-col text-start">

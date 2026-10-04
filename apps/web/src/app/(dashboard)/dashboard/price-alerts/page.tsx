@@ -99,7 +99,7 @@ export default function PriceAlertsPage() {
                       onClick={() => handleToggle(a.id)}
                       className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition-colors ${
                         a.isActive
-                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+                          ? "border-primary/30 bg-primary/10 text-primary"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >
@@ -132,7 +132,9 @@ export default function PriceAlertsPage() {
                     </span>
                     <span
                       className={`font-mono font-bold ${
-                        isUnderTarget ? "font-extrabold text-emerald-600" : "text-foreground"
+                        isUnderTarget
+                          ? "font-extrabold text-amber-600 dark:text-amber-400"
+                          : "text-foreground"
                       }`}
                     >
                       {a.currentLowestPrice.toLocaleString("fa-IR")} ریال
@@ -141,15 +143,18 @@ export default function PriceAlertsPage() {
                 </div>
 
                 {isUnderTarget && (
-                  <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                  <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200">
                     <div className="flex items-center gap-1.5">
-                      <SparklesIcon className="size-4 text-emerald-600" />
+                      <SparklesIcon className="size-4 text-amber-600" />
                       <span className="font-bold">قیمت به زیر بودجه شما رسید!</span>
                     </div>
                     <Link
                       href={`${paths.flights}?origin=${a.origin}&destination=${a.destination}&departureDate=${a.targetDate || new Date().toISOString().split("T")[0]}`}
                     >
-                      <Button size="xs" className="bg-emerald-600 font-bold hover:bg-emerald-700">
+                      <Button
+                        size="xs"
+                        className="bg-primary text-primary-foreground font-bold shadow-sm"
+                      >
                         خرید الان
                       </Button>
                     </Link>

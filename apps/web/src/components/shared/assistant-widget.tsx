@@ -258,7 +258,7 @@ export function AssistantWidget() {
           </div>
           <Badge
             variant="secondary"
-            className="bg-emerald-400 px-1.5 py-0 text-[10px] font-bold text-emerald-950"
+            className="bg-cyan-400 px-1.5 py-0 text-[10px] font-bold text-cyan-950 shadow-xs"
           >
             آنلاین
           </Badge>
@@ -372,7 +372,7 @@ export function AssistantWidget() {
                           </span>
                           <Badge
                             variant="secondary"
-                            className="bg-emerald-500/10 text-[10px] text-emerald-600"
+                            className="border-amber-500/20 bg-amber-500/10 text-[10px] font-bold text-amber-600 dark:text-amber-400"
                           >
                             {deal.discountPercent}٪ تخفیف
                           </Badge>

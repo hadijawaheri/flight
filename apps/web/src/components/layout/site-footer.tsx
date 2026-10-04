@@ -84,7 +84,7 @@ export function SiteFooter() {
                 <span>پیش‌بینی هوشمند افت یا افزایش قیمت</span>
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheckIcon className="size-4 shrink-0 text-emerald-500" />
+                <ShieldCheckIcon className="text-primary size-4 shrink-0" />
                 <span>صدور رسمی و آنی بلیط با تاییدیه سازمان هواپیمایی</span>
               </div>
               <div className="flex items-center gap-2">

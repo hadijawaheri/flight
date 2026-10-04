@@ -70,14 +70,16 @@ function CheckoutResultContent() {
   return (
     <div className="container mx-auto flex max-w-4xl flex-col gap-8 px-4 py-10 sm:px-6">
       {/* Success Notification Banner */}
-      <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-emerald-950 sm:flex-row dark:text-emerald-100">
+      <div className="border-primary/20 bg-primary/10 text-foreground flex flex-col items-center justify-between gap-4 rounded-2xl border p-5 sm:flex-row">
         <div className="flex items-center gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white">
+          <div className="bg-primary text-primary-foreground flex size-12 shrink-0 items-center justify-center rounded-2xl shadow-sm">
             <CheckCircle2Icon className="size-7" />
           </div>
           <div className="flex flex-col text-start">
-            <h1 className="font-heading text-xl font-bold">پرداخت موفق و صدور قطعی بلیط!</h1>
-            <p className="text-xs opacity-90">
+            <h1 className="font-heading text-foreground text-xl font-bold">
+              پرداخت موفق و صدور قطعی بلیط!
+            </h1>
+            <p className="text-muted-foreground text-xs">
               پیامک حاوی لینک بلیط به شماره {booking.contactMobile} ارسال شد.
             </p>
           </div>

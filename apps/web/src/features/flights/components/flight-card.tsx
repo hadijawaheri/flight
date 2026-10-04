@@ -46,13 +46,13 @@ export function FlightCard({ flight, onSelect, isSelecting }: FlightCardProps) {
       <div
         className={`flex items-center justify-between border-b px-4 py-1.5 text-xs font-medium ${
           isBuyNow
-            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+            ? "border-primary/20 bg-primary/10 text-primary dark:text-sky-300"
             : "border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300"
         }`}
       >
         <div className="flex items-center gap-1.5">
           {isFalling ? (
-            <TrendingDownIcon className="size-4 text-emerald-600" />
+            <TrendingDownIcon className="text-primary size-4" />
           ) : isRising ? (
             <TrendingUpIcon className="size-4 text-amber-600" />
           ) : (
@@ -145,7 +145,7 @@ export function FlightCard({ flight, onSelect, isSelecting }: FlightCardProps) {
                   </span>
                   <Badge
                     variant="secondary"
-                    className="bg-emerald-500/10 px-1 py-0 text-[10px] text-emerald-600"
+                    className="border-amber-500/20 bg-amber-500/10 px-1.5 py-0 text-[10px] font-bold text-amber-600 dark:text-amber-400"
                   >
                     تخفیف ویژه
                   </Badge>
@@ -178,7 +178,7 @@ export function FlightCard({ flight, onSelect, isSelecting }: FlightCardProps) {
               <span>بار مجاز: {flight.baggageAllowanceKg} کیلوگرم</span>
             </div>
             <div className="flex items-center gap-1">
-              <ShieldCheckIcon className="size-3.5 text-emerald-600" />
+              <ShieldCheckIcon className="text-primary size-3.5" />
               <span>
                 {flight.isRefundable ? "قابل استرداد طبق قوانین" : "غیرقابل استرداد (چارتری)"}
               </span>

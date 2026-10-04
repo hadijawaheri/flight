@@ -58,8 +58,10 @@ export function FlightSearchBox({
   const [children, setChildren] = React.useState(0);
   const [flightClass, setFlightClass] = React.useState<"ECONOMY" | "BUSINESS">("ECONOMY");
   const [showPassengerDropdown, setShowPassengerDropdown] = React.useState(false);
+  const [isRotated, setIsRotated] = React.useState(false);
 
   const handleSwapAirports = () => {
+    setIsRotated((prev) => !prev);
     setOrigin(destination);
     setDestination(origin);
   };
@@ -165,9 +167,13 @@ export function FlightSearchBox({
               type="button"
               onClick={handleSwapAirports}
               title="جابجایی مبدا و مقصد"
-              className="bg-background text-muted-foreground hover:text-foreground absolute top-7 left-1/2 z-10 flex size-7 -translate-x-1/2 items-center justify-center rounded-full border shadow-md transition-all hover:scale-110 active:scale-95"
+              className="bg-card hover:bg-accent text-muted-foreground hover:text-primary border-border/80 absolute top-7 left-1/2 z-10 flex size-8 -translate-x-1/2 items-center justify-center rounded-full border shadow-md transition-all duration-300 hover:scale-110 active:scale-95"
             >
-              <ArrowLeftRightIcon className="size-3.5 rtl:rotate-180" />
+              <ArrowLeftRightIcon
+                className={`size-3.5 transition-transform duration-300 ${
+                  isRotated ? "rotate-180" : ""
+                }`}
+              />
             </button>
           </div>
 

@@ -59,7 +59,7 @@ export default function DealsPage() {
                   <div className="flex flex-col items-end gap-1.5">
                     <Badge
                       variant="secondary"
-                      className="bg-emerald-500/10 px-2 py-0.5 font-bold text-emerald-600"
+                      className="border-amber-500/20 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-600 dark:text-amber-400"
                     >
                       {deal.discountPercent}٪ تخفیف
                     </Badge>

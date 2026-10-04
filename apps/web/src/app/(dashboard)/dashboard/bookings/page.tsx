@@ -70,7 +70,7 @@ export default function BookingsHistoryPage() {
 
                   <div className="flex items-center gap-2">
                     {isConfirmed ? (
-                      <Badge className="gap-1 border-emerald-300 bg-emerald-500/10 text-emerald-600">
+                      <Badge className="border-primary/30 bg-primary/10 text-primary gap-1">
                         <CheckCircle2Icon className="size-3.5" />
                         <span>بلیط صادر شد</span>
                       </Badge>

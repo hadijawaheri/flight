@@ -37,32 +37,15 @@ export default function HomePage() {
       <section className="from-primary/10 via-background to-background relative overflow-hidden bg-gradient-to-b pt-12 pb-8 sm:pt-20">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6">
           <div className="mx-auto mb-8 flex max-w-3xl flex-col items-center gap-4 text-center">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Badge
-                variant="secondary"
-                className="bg-primary/10 text-primary border-primary/20 gap-1.5 px-3 py-1 text-xs"
-              >
-                <SparklesIcon className="size-3.5" />
-                <span>نسل جدید سامانه پرواز پلاس (FlySmart)</span>
-              </Badge>
-              <Badge
-                variant="outline"
-                className="gap-1.5 border-emerald-300 px-3 py-1 text-xs text-emerald-600"
-              >
-                <TrendingDownIcon className="size-3.5" />
-                <span>تضمین کمترین نرخ بازار</span>
-              </Badge>
-            </div>
-
             <h1 className="font-heading text-foreground text-3xl leading-tight font-extrabold tracking-tight sm:text-5xl sm:leading-tight">
               خرید هوشمندانه بلیط هواپیما <br className="hidden sm:inline" />
-              <span className="text-primary">با بهترین قیمت و رزرو ۱-کلیکه</span>
+              <span className="text-primary">با نرخ شفاف و رزرو ۱-کلیکه</span>
             </h1>
 
             <p className="text-muted-foreground max-w-2xl text-base leading-relaxed sm:text-lg">
-              اولین سامانه پروازی مجهز به تحلیل روند قیمت، دیده‌بان هوشمند کاهش نرخ و بانک مسافران
-              همیشگی. یک‌بار مشخصات را ثبت کنید و در تمام سفرهای آینده تنها با یک کلیک بلیط خود را
-              نهایی کنید.
+              سامانه پروازی مجهز به تحلیل هوشمند روند قیمت، دیده‌بان افت نرخ و ذخیره‌ساز مسافران
+              همیشگی. یک‌بار مشخصات را ثبت کنید و در تمام سفرهای آینده با یک کلیک رزرو خود را نهایی
+              کنید.
             </p>
           </div>
 
@@ -76,9 +59,9 @@ export default function HomePage() {
       {/* Innovation Highlights Bar */}
       <section className="container mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-card/60 hover:border-primary/40 border p-4 transition-all hover:shadow-xs">
+          <Card className="bg-card/80 hover:border-primary/50 border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <ZapIcon className="size-5" />
               </div>
               <div className="flex flex-col gap-1 text-start">
@@ -92,7 +75,7 @@ export default function HomePage() {
             </div>
           </Card>
 
-          <Card className="bg-card/60 hover:border-primary/40 border p-4 transition-all hover:shadow-xs">
+          <Card className="bg-card/80 hover:border-primary/50 border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-start gap-3">
               <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-xl">
                 <TrendingDownIcon className="size-5" />
@@ -102,16 +85,15 @@ export default function HomePage() {
                   پیش‌بینی روند قیمت
                 </h3>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  الگوریتم پرواز پلاس به شما پیشنهاد می‌دهد که الان بخرید یا برای ارزان‌تر شدن صبر
-                  کنید.
+                  تحلیل الگوریتمی قیمت مسیر برای تصمیم‌گیری دقیق میان خرید فوری یا انتظار.
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-card/60 hover:border-primary/40 border p-4 transition-all hover:shadow-xs">
+          <Card className="bg-card/80 hover:border-primary/50 border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
                 <BellRingIcon className="size-5" />
               </div>
               <div className="flex flex-col gap-1 text-start">
@@ -119,23 +101,21 @@ export default function HomePage() {
                   دیده‌بان افت قیمت پیامکی
                 </h3>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  بودجه و مسیرتان را ثبت کنید؛ به محض باز شدن پرواز زیر قیمت، پیامک فوری دریافت
-                  کنید.
+                  ثبت سقف بودجه و دریافت هشدار آنی پیامکی به محض عرضه پروازهای زیر قیمت.
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-card/60 hover:border-primary/40 border p-4 transition-all hover:shadow-xs">
+          <Card className="bg-card/80 hover:border-primary/50 border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <div className="flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <CompassIcon className="size-5" />
               </div>
               <div className="flex flex-col gap-1 text-start">
                 <h3 className="font-heading text-foreground text-sm font-bold">کاوشگر بودجه سفر</h3>
                 <p className="text-muted-foreground text-xs leading-relaxed">
-                  سقف بودجه خود را تعیین کنید تا تمام شهرهایی که با آن مبلغ می‌توانید بروید را
-                  ببینید!
+                  تعیین سقف بودجه برای کشف فوری تمام مقاصد در دسترس با همان مبلغ.
                 </p>
               </div>
             </div>
@@ -191,7 +171,7 @@ export default function HomePage() {
                     </div>
                     <Badge
                       variant="secondary"
-                      className="bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-600"
+                      className="border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400"
                     >
                       {deal.discountPercent}٪ تخفیف
                     </Badge>
@@ -313,15 +293,15 @@ export default function HomePage() {
 
             <ul className="text-foreground flex flex-col gap-2.5 text-sm">
               <li className="flex items-center gap-2">
-                <CheckCircle2Icon className="size-4 text-emerald-600" />
+                <CheckCircle2Icon className="text-primary size-4" />
                 <span>اعتبارسنجی خودکار صحت الگوریتم کد ملی و اطلاعات گذرنامه</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2Icon className="size-4 text-emerald-600" />
+                <CheckCircle2Icon className="text-primary size-4" />
                 <span>انتخاب سریع صندلی‌های کنار هم برای خانواده</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2Icon className="size-4 text-emerald-600" />
+                <CheckCircle2Icon className="text-primary size-4" />
                 <span>امکان افزودن نامحدود مسافران مکرر (همکاران، دوستان، خانواده)</span>
               </li>
             </ul>
@@ -350,7 +330,7 @@ export default function HomePage() {
                 </Badge>
               </div>
               <div className="bg-muted/60 text-foreground flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium">
-                <span className="size-2 rounded-full bg-emerald-500" />
+                <span className="size-2 rounded-full bg-sky-500" />
                 <span>سارا محمدی (۰۶۸۴۱۵۹۴۱۴)</span>
               </div>
               <div className="bg-muted/60 text-foreground flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium">

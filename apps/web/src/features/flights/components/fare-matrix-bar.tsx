@@ -41,7 +41,7 @@ export function FareMatrixBar({
       {/* Header with Title and Prev/Next Navigation Controls */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
         <div className="text-foreground flex items-center gap-1.5 font-bold">
-          <TrendingDownIcon className="size-4 text-emerald-600" />
+          <TrendingDownIcon className="text-primary size-4" />
           <span>تقویم ارزان‌ترین نرخ‌های پرواز (روزهای قبل و بعد)</span>
         </div>
 
@@ -102,7 +102,7 @@ export function FareMatrixBar({
               }`}
             >
               {item.isLowestInWeek && (
-                <div className="ring-card absolute -top-2.5 z-10 flex items-center gap-0.5 rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-md ring-2">
+                <div className="ring-card absolute -top-2.5 z-10 flex items-center gap-0.5 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-md ring-2">
                   <SparklesIcon className="size-2.5" />
                   <span>ارزان‌ترین</span>
                 </div>
@@ -116,7 +116,7 @@ export function FareMatrixBar({
               <span
                 className={`text-xs font-extrabold ${
                   item.isLowestInWeek
-                    ? "text-emerald-600"
+                    ? "text-amber-600 dark:text-amber-400"
                     : isSelected
                       ? "text-primary"
                       : "text-foreground"

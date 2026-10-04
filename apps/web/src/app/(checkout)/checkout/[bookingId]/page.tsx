@@ -149,7 +149,7 @@ function CheckoutForm({ booking }: { booking: BookingDto }) {
       {/* Page Header */}
       <div className="flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
-          <LockIcon className="size-5 text-emerald-600" />
+          <LockIcon className="text-primary size-5" />
           <h1 className="font-heading text-foreground text-2xl font-extrabold">
             تکمیل اطلاعات مسافران و پرداخت
           </h1>
@@ -454,7 +454,7 @@ function CheckoutForm({ booking }: { booking: BookingDto }) {
                 <span>قیمت کل پایه:</span>
                 <span>{booking.totalAmount.toLocaleString("fa-IR")} ریال</span>
               </div>
-              <div className="flex justify-between font-semibold text-emerald-600">
+              <div className="text-primary flex justify-between font-semibold">
                 <span>تخفیف ویژه پرواز پلاس:</span>
                 <span>رایگان (۰ ریال کارمزد)</span>
               </div>
@@ -470,7 +470,7 @@ function CheckoutForm({ booking }: { booking: BookingDto }) {
             </div>
 
             <div className="text-muted-foreground flex items-center gap-1.5 border-t pt-2 text-[11px]">
-              <ShieldCheckIcon className="size-4 shrink-0 text-emerald-600" />
+              <ShieldCheckIcon className="text-primary size-4 shrink-0" />
               <span>پرداخت امن با پروتکل SSL و ضمانت استرداد آنلاین وجه</span>
             </div>
           </Card>

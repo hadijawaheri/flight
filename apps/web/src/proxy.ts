@@ -1,4 +1,4 @@
-﻿import { COOKIE_NAMES } from "@flysmart/contracts";
+import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 

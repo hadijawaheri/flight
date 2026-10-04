@@ -13,6 +13,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { paths } from "@/lib/paths";
@@ -82,16 +83,25 @@ export function SiteHeader() {
           </nav>
         </div>
 
-        {/* User CTA & Mobile Hamburger */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* User CTA & Theme Toggle & Mobile Hamburger */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <ThemeToggle />
+
           <Link href={paths.dashboard}>
-            <Button variant="outline" size="sm" className="hidden gap-1.5 sm:inline-flex">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-border/80 hidden gap-1.5 rounded-xl sm:inline-flex"
+            >
               <UsersIcon className="size-4" />
               <span>حساب کاربری</span>
             </Button>
           </Link>
           <Link href={paths.signIn}>
-            <Button size="sm" className="gap-1.5 text-xs shadow-sm sm:text-sm">
+            <Button
+              size="sm"
+              className="shadow-primary/20 gap-1.5 rounded-xl text-xs font-semibold shadow-md sm:text-sm"
+            >
               <span>ورود / عضویت</span>
             </Button>
           </Link>

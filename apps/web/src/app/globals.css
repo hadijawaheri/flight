@@ -48,73 +48,101 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* 2026 Aero Stratosphere - Light Mode */
+  --background: oklch(0.985 0.006 245);
+  --foreground: oklch(0.16 0.04 255);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.16 0.04 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* emerald-700 on white is about 5.5:1 (AA) */
-  --primary: oklch(50.8% 0.118 165.612);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.16 0.04 255);
+
+  /* Primary: High-Altitude Electric Aviation Blue (Cobalt Sky) */
+  --primary: oklch(0.53 0.22 255);
+  --primary-foreground: oklch(0.99 0 0);
+
+  /* Secondary: Cool Aero Stratosphere Tint */
+  --secondary: oklch(0.95 0.02 245);
+  --secondary-foreground: oklch(0.24 0.08 255);
+
+  /* Muted & Accents */
+  --muted: oklch(0.955 0.012 245);
+  --muted-foreground: oklch(0.5 0.035 250);
+  --accent: oklch(0.94 0.03 245);
+  --accent-foreground: oklch(0.2 0.08 255);
+
+  /* Destructive & Danger */
+  --destructive: oklch(0.58 0.22 25);
+
+  /* Borders & Inputs */
+  --border: oklch(0.91 0.015 245);
+  --input: oklch(0.91 0.015 245);
+  --ring: oklch(0.53 0.22 255);
+
+  /* Charts */
+  --chart-1: oklch(0.53 0.22 255);
+  --chart-2: oklch(0.72 0.18 55);
+  --chart-3: oklch(0.6 0.16 190);
+  --chart-4: oklch(0.65 0.2 310);
+  --chart-5: oklch(0.4 0.1 250);
+
+  --radius: 0.875rem;
+
+  --sidebar: oklch(0.98 0.01 245);
+  --sidebar-foreground: oklch(0.16 0.04 255);
+  --sidebar-primary: oklch(0.53 0.22 255);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.02 245);
+  --sidebar-accent-foreground: oklch(0.2 0.08 255);
+  --sidebar-border: oklch(0.91 0.015 245);
+  --sidebar-ring: oklch(0.53 0.22 255);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(69.6% 0.17 162.48);
-  --primary-foreground: oklch(20% 0.02 160);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* 2026 Midnight Horizon - Dark Mode */
+  --background: oklch(0.13 0.03 260);
+  --foreground: oklch(0.98 0.005 240);
+  --card: oklch(0.17 0.035 255);
+  --card-foreground: oklch(0.98 0.005 240);
+  --popover: oklch(0.17 0.035 255);
+  --popover-foreground: oklch(0.98 0.005 240);
+
+  /* Luminous Celestial Cyan-Cobalt */
+  --primary: oklch(0.68 0.19 245);
+  --primary-foreground: oklch(0.12 0.04 260);
+
+  /* Deep Altitude Secondary */
+  --secondary: oklch(0.22 0.035 255);
+  --secondary-foreground: oklch(0.96 0.01 240);
+
+  /* Muted & Accents */
+  --muted: oklch(0.21 0.03 255);
+  --muted-foreground: oklch(0.68 0.03 245);
+  --accent: oklch(0.24 0.04 255);
+  --accent-foreground: oklch(0.98 0.005 240);
+
+  /* Destructive */
+  --destructive: oklch(0.65 0.2 25);
+
+  /* Borders & Inputs */
+  --border: oklch(0.25 0.035 255);
+  --input: oklch(0.25 0.035 255);
+  --ring: oklch(0.68 0.19 245);
+
+  /* Charts */
+  --chart-1: oklch(0.68 0.19 245);
+  --chart-2: oklch(0.76 0.18 60);
+  --chart-3: oklch(0.65 0.16 195);
+  --chart-4: oklch(0.7 0.18 315);
+  --chart-5: oklch(0.5 0.12 250);
+
+  --sidebar: oklch(0.15 0.03 260);
+  --sidebar-foreground: oklch(0.98 0.005 240);
+  --sidebar-primary: oklch(0.68 0.19 245);
+  --sidebar-primary-foreground: oklch(0.12 0.04 260);
+  --sidebar-accent: oklch(0.22 0.035 255);
+  --sidebar-accent-foreground: oklch(0.98 0.005 240);
+  --sidebar-border: oklch(0.25 0.035 255);
+  --sidebar-ring: oklch(0.68 0.19 245);
 }
 
 @layer base {
@@ -122,9 +150,48 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
   }
   html {
     @apply font-sans;
+    color-scheme: light dark;
   }
+
+  /* Custom 2026 Aerospace Selection */
+  ::selection {
+    background-color: oklch(0.53 0.22 255 / 22%);
+    color: inherit;
+  }
+
+  /* Custom Sleek Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.53 0.22 255 / 20%);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.53 0.22 255 / 40%);
+  }
+}
+
+/* Glassmorphism & Atmospheric Aero Effects */
+.aero-glass {
+  background: color-mix(in oklch, var(--card) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+}
+
+.aero-glow {
+  box-shadow: 0 0 35px -5px oklch(0.53 0.22 255 / 15%);
+}
+
+.dark .aero-glow {
+  box-shadow: 0 0 45px -5px oklch(0.68 0.19 245 / 25%);
 }

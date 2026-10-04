@@ -62,7 +62,7 @@ export function TravelersVaultSelector({
           </span>
         </div>
         <div className="text-muted-foreground flex items-center gap-1 text-[11px]">
-          <ShieldCheckIcon className="size-3.5 text-emerald-600" />
+          <ShieldCheckIcon className="text-primary size-3.5" />
           <span>تأییدشده و آماده صدور</span>
         </div>
       </div>
