@@ -1,27 +1,22 @@
-import type { ApiResponse, BudgetDestinationDto, CheapDealDto } from "@flysmart/contracts";
 import { Controller, Get, Query } from "@nestjs/common";
+import type { ApiResponse, DealDto, ExploreResultDto } from "@flysmart/contracts";
 
 import { Public } from "../../common/decorators/public.decorator.js";
 import { DealsService } from "./deals.service.js";
-import { BudgetExploreQueryDto } from "./dto/budget-explore.dto.js";
+import { ExploreQueryDto, FlashDealsQueryDto } from "./dto/deals.dto.js";
 
+@Public()
 @Controller({ path: "deals", version: "1" })
 export class DealsController {
   constructor(private readonly dealsService: DealsService) {}
 
-  @Public()
-  @Get()
-  async getDeals(): Promise<ApiResponse<CheapDealDto[]>> {
-    const data = await this.dealsService.getDeals();
-    return { data };
+  @Get("flash")
+  async flash(@Query() query: FlashDealsQueryDto): Promise<ApiResponse<DealDto[]>> {
+    return { data: await this.dealsService.flash(query) };
   }
 
-  @Public()
   @Get("explore")
-  async exploreBudget(
-    @Query() query: BudgetExploreQueryDto,
-  ): Promise<ApiResponse<BudgetDestinationDto[]>> {
-    const data = await this.dealsService.exploreBudget(query.origin, query.maxBudget);
-    return { data };
+  async explore(@Query() query: ExploreQueryDto): Promise<ApiResponse<ExploreResultDto>> {
+    return { data: await this.dealsService.explore(query) };
   }
 }

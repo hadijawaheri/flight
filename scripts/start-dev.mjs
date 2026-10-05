@@ -10,9 +10,14 @@ console.log("🚀 Starting FlySmart (پرواز پلاس) Full Environment");
 console.log("==================================================");
 
 console.log("[1/3] Starting embedded MongoDB replica set (port 27018)...");
+// First start on Windows can exceed the 30 s default while Defender scans the new data files
 const replSet = await MongoMemoryReplSet.create({
   replSet: { count: 1, name: "rs0", storageEngine: "wiredTiger" },
-  instanceOpts: [{ port: 27018 }],
+  instanceOpts: [{ port: 27018, ip: "127.0.0.1", launchTimeout: 180_000 }],
+}).catch((error) => {
+  console.error("Could not start MongoDB on 127.0.0.1:27018:", error);
+  console.error("Check for a leftover mongod holding the port: Get-Process mongod | Stop-Process");
+  process.exit(1);
 });
 console.log("✅ MongoDB ready at:", replSet.getUri("flysmart"));
 

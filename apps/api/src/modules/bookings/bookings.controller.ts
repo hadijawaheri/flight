@@ -1,60 +1,84 @@
-import type { ApiResponse, BookingDto } from "@flysmart/contracts";
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from "@nestjs/common";
+import type {
+  ApiResponse,
+  BookingDto,
+  BookingListItemDto,
+  PaginatedResponse,
+  PayBookingResultDto,
+  RefundQuoteDto,
+} from "@flysmart/contracts";
 
 import { CurrentUser } from "../../common/decorators/current-user.decorator.js";
-import { Public } from "../../common/decorators/public.decorator.js";
 import type { AuthUser } from "../../common/types/auth.js";
 import { BookingsService } from "./bookings.service.js";
-import { CreateBookingDto } from "./dto/create-booking.dto.js";
-import { UpdateBookingDto } from "./dto/update-booking.dto.js";
+import {
+  AssignSeatsDto,
+  CreateBookingDto,
+  ListBookingsQueryDto,
+  PayBookingDto,
+} from "./dto/bookings.dto.js";
 
 @Controller({ path: "bookings", version: "1" })
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Get()
-  async list(@CurrentUser() user: AuthUser): Promise<ApiResponse<BookingDto[]>> {
-    const data = await this.bookingsService.listByUser(user.id);
-    return { data };
+  async list(
+    @CurrentUser() user: AuthUser,
+    @Query() query: ListBookingsQueryDto,
+  ): Promise<PaginatedResponse<BookingListItemDto>> {
+    return this.bookingsService.list(user.id, query);
   }
 
-  @Public()
-  @Get(":id")
-  async get(
-    @CurrentUser() user: AuthUser | undefined,
-    @Param("id") id: string,
-  ): Promise<ApiResponse<BookingDto>> {
-    const data = await this.bookingsService.getById(user?.id, id);
-    return { data };
-  }
-
-  @Public()
   @Post()
   async create(
-    @CurrentUser() user: AuthUser | undefined,
+    @CurrentUser() user: AuthUser,
     @Body() dto: CreateBookingDto,
   ): Promise<ApiResponse<BookingDto>> {
-    const data = await this.bookingsService.create(user?.id, dto);
-    return { data };
+    return { data: await this.bookingsService.create(user.id, dto) };
   }
 
-  @Public()
-  @Patch(":id")
-  async update(
-    @CurrentUser() user: AuthUser | undefined,
+  @Get(":id")
+  async get(
+    @CurrentUser() user: AuthUser,
     @Param("id") id: string,
-    @Body() dto: UpdateBookingDto,
   ): Promise<ApiResponse<BookingDto>> {
-    const data = await this.bookingsService.update(user?.id, id, dto);
-    return { data };
+    return { data: await this.bookingsService.get(user.id, id) };
+  }
+
+  @Patch(":id/seats")
+  async assignSeats(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: AssignSeatsDto,
+  ): Promise<ApiResponse<BookingDto>> {
+    return { data: await this.bookingsService.assignSeats(user.id, id, dto) };
+  }
+
+  @Post(":id/pay")
+  @HttpCode(200)
+  async pay(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+    @Body() dto: PayBookingDto,
+  ): Promise<ApiResponse<PayBookingResultDto>> {
+    return { data: await this.bookingsService.pay(user.id, id, dto) };
+  }
+
+  @Get(":id/refund-quote")
+  async refundQuote(
+    @CurrentUser() user: AuthUser,
+    @Param("id") id: string,
+  ): Promise<ApiResponse<RefundQuoteDto>> {
+    return { data: await this.bookingsService.refundQuote(user.id, id) };
   }
 
   @Post(":id/cancel")
+  @HttpCode(200)
   async cancel(
     @CurrentUser() user: AuthUser,
     @Param("id") id: string,
   ): Promise<ApiResponse<BookingDto>> {
-    const data = await this.bookingsService.cancelBooking(user.id, id);
-    return { data };
+    return { data: await this.bookingsService.cancel(user.id, id) };
   }
 }

@@ -1,8 +1,8 @@
-﻿import type { ApiResponse, UserDto } from "@flysmart/contracts";
-import { COOKIE_NAMES } from "@flysmart/contracts";
 import { Body, Controller, Get, HttpCode, Post, Req, Res } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Throttle } from "@nestjs/throttler";
+import type { ApiResponse, UserDto } from "@flysmart/contracts";
+import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { Request, Response } from "express";
 
 import { CurrentUser } from "../../common/decorators/current-user.decorator.js";
@@ -60,7 +60,7 @@ export class AuthController {
     try {
       const tokens = await this.authService.refresh(refreshCookieOf(req));
       setSessionCookies(res, tokens, this.isProd);
-    } catch (error) {
+    } catch (error: unknown) {
       clearSessionCookies(res, this.isProd);
       throw error;
     }

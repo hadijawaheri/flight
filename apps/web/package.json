@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev -p 7782",
     "build": "next build",
-    "start": "PORT=7782 node .next/standalone/apps/web/server.js",
+    "start": "node scripts/start.mjs",
     "lint": "echo 'lint runs from repo root (eslint .)'",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

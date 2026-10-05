@@ -3,23 +3,24 @@ import { HealthCheck, HealthCheckService, MongooseHealthIndicator } from "@nestj
 
 import { Public } from "../common/decorators/public.decorator.js";
 
-@Public()
 @Controller({ path: "health", version: VERSION_NEUTRAL })
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
-    private readonly mongo: MongooseHealthIndicator,
+    private readonly mongoose: MongooseHealthIndicator,
   ) {}
 
+  @Public()
   @Get("live")
   @HealthCheck()
   live() {
     return this.health.check([]);
   }
 
+  @Public()
   @Get("ready")
   @HealthCheck()
   ready() {
-    return this.health.check([() => this.mongo.pingCheck("mongo")]);
+    return this.health.check([() => this.mongoose.pingCheck("mongo")]);
   }
 }

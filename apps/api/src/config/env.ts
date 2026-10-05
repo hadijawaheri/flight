@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const flag = (fallback: "true" | "false") =>
+  z
+    .enum(["true", "false"])
+    .default(fallback)
+    .transform((value) => value === "true");
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -15,19 +21,41 @@ const envSchema = z
       .transform((value) => value.split(",").map((origin) => origin.trim())),
     SMS_PROVIDER: z.enum(["console", "melipayamak"]).default("console"),
     OTP_FIXED_CODE: z.string().length(6).optional(),
-    THROTTLE_ENABLED: z
-      .enum(["true", "false"])
-      .default("true")
-      .transform((value) => value === "true"),
+    ALLOW_DEV_AUTH: flag("false"),
+    THROTTLE_ENABLED: flag("true"),
+
+    // Flights and payments run on simulated providers until real ones are connected
+    FLIGHT_PROVIDER: z.enum(["simulation"]).default("simulation"),
+    PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
+
+    // Without a key the assistant answers from the knowledge base only (offline mode).
+    // `ANTHROPIC_API_KEY=` in .env.example arrives as "", so empty must mean "unset".
+    ANTHROPIC_API_KEY: z
+      .string()
+      .optional()
+      .transform((value) => (value && value.trim().length > 0 ? value.trim() : undefined)),
+    ANTHROPIC_MODEL: z.string().min(1).default("claude-sonnet-5-5"),
+    ANTHROPIC_BASE_URL: z.string().url().default("https://api.anthropic.com"),
+    ASSISTANT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(30_000),
+
+    // Background jobs; switched off in tests that need a quiet process
+    ALERTS_WATCHER_ENABLED: flag("true"),
+    BOOKING_EXPIRER_ENABLED: flag("true"),
   })
   .refine(
     (env) =>
-      process.env.ALLOW_DEV_AUTH === "true" ||
+      env.ALLOW_DEV_AUTH ||
       env.NODE_ENV !== "production" ||
       (!env.OTP_FIXED_CODE && env.SMS_PROVIDER !== "console"),
     {
       message:
         "OTP_FIXED_CODE and the console SMS provider are forbidden in production unless ALLOW_DEV_AUTH=true",
+    },
+  )
+  .refine(
+    (env) => env.ALLOW_DEV_AUTH || env.NODE_ENV !== "production" || env.PAYMENT_PROVIDER !== "mock",
+    {
+      message: "The mock payment provider is forbidden in production unless ALLOW_DEV_AUTH=true",
     },
   );
 

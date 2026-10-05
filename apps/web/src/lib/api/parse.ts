@@ -1,4 +1,4 @@
-﻿import type { ApiErrorBody, ErrorCode } from "@flysmart/contracts";
+import type { ApiErrorBody, ErrorCode } from "@flysmart/contracts";
 
 export class ApiError extends Error {
   constructor(

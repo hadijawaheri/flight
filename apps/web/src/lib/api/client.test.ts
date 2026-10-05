@@ -57,7 +57,7 @@ describe("api client", () => {
 
   it("does not loop when refresh fails", async () => {
     const assign = vi.fn();
-    vi.stubGlobal("location", { assign, pathname: "/dashboard" });
+    vi.stubGlobal("location", { assign, pathname: "/dashboard", search: "?tab=1" });
     fetchMock.mockImplementation((input) =>
       Promise.resolve(
         String(input) === "/api/auth/refresh"
@@ -66,6 +66,7 @@ describe("api client", () => {
       ),
     );
     await expect(api("/a")).rejects.toBeInstanceOf(ApiError);
-    expect(assign).toHaveBeenCalledWith("/sign-in?next=%2Fdashboard");
+    // The query string must survive the round trip so the traveller lands back on the same view
+    expect(assign).toHaveBeenCalledWith("/sign-in?next=%2Fdashboard%3Ftab%3D1");
   });
 });

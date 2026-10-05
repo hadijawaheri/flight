@@ -28,3 +28,14 @@ Inspired by high-altitude supersonic aviation, cockpit telemetry, and golden-hou
 - Theme toggle with scale/rotation flip between Sun and Moon.
 - Expandable flight rules drawer with smooth height easing.
 - Custom aeronautical thin scrollbars and cyan-tinted text selection.
+
+## Rebuild notes (shadcn + impeccable)
+
+- Tokens are semantic only (`primary`, `muted`, `warning`, `brand-soft`, `brand-ink`, `warning-soft`, `warning-ink`);
+  components never use raw colours. Numbers use tabular figures (`.tnum`).
+- Colour is never the only signal: verdicts and reliability pair colour with an icon and words.
+- Layout is logical (start/end) and direction-aware; directional icons use `rtl:rotate-180`. The price chart
+  runs time right-to-left with its value axis at the end edge.
+- Time-sensitive state (hold countdown) switches to the warning tokens in the last two minutes.
+- Impeccable checks: no gradient text, glass, glow, side-stripe borders, nested cards or bounce easing.
+  Run `npx impeccable detect apps/web/src` after installing dependencies.

@@ -1,10 +1,15 @@
-import type { AskAssistantInput } from "@flysmart/contracts";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { askAssistantApi } from "./api";
+import { assistantApi } from "./api";
+
+export function useAssistantStatus() {
+  return useQuery({
+    queryKey: ["assistant", "status"],
+    queryFn: assistantApi.status,
+    staleTime: 10 * 60_000,
+  });
+}
 
 export function useAskAssistant() {
-  return useMutation({
-    mutationFn: (input: AskAssistantInput) => askAssistantApi(input),
-  });
+  return useMutation({ mutationFn: assistantApi.ask });
 }

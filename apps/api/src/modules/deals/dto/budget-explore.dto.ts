@@ -1,5 +1,2 @@
-import { budgetExploreQuerySchema } from "@flysmart/contracts";
-
-import { createZodDto } from "../../../common/zod/create-zod-dto.js";
-
-export class BudgetExploreQueryDto extends createZodDto(budgetExploreQuerySchema) {}
+// Obsolete file from the previous implementation. Delete it.
+export {};

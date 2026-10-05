@@ -15,7 +15,7 @@ import { RefreshToken, RefreshTokenSchema } from "./schemas/refresh-token.schema
       { name: RefreshToken.name, schema: RefreshTokenSchema },
     ]),
   ],
-  providers: [AuthService],
   controllers: [AuthController],
+  providers: [AuthService],
 })
 export class AuthModule {}

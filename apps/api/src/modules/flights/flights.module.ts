@@ -1,11 +1,11 @@
 import { Module } from "@nestjs/common";
 
-import { FlightInfraModule } from "../../infra/flight/flight.module.js";
+import { InventoryModule } from "../inventory/inventory.module.js";
 import { FlightsController } from "./flights.controller.js";
 import { FlightsService } from "./flights.service.js";
 
 @Module({
-  imports: [FlightInfraModule],
+  imports: [InventoryModule],
   controllers: [FlightsController],
   providers: [FlightsService],
   exports: [FlightsService],

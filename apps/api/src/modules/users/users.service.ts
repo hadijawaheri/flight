@@ -1,6 +1,6 @@
-﻿import type { UserDto } from "@flysmart/contracts";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import type { UserDto } from "@flysmart/contracts";
 import { Model } from "mongoose";
 
 import type { UpdateProfileDto } from "./dto/update-profile.dto.js";

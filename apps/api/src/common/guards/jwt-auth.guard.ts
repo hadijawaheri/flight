@@ -1,9 +1,9 @@
-import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
+import { COOKIE_NAMES } from "@flysmart/contracts";
 
 import type { Env } from "../../config/env.js";
 import { IS_PUBLIC } from "../decorators/public.decorator.js";
@@ -40,7 +40,7 @@ export class JwtAuthGuard implements CanActivate {
           });
           req.user = { id: payload.sub, role: payload.role };
         } catch {
-          // Public endpoint: proceed without attaching user
+          // Public endpoint: an expired token simply means "anonymous"
         }
       }
       return true;

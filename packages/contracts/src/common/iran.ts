@@ -20,3 +20,13 @@ export function isValidNationalCode(code: string): boolean {
 export const nationalCodeSchema = digitsString.pipe(
   z.string().refine(isValidNationalCode, "کد ملی معتبر نیست"),
 );
+
+/** Masks all but the last digits of a mobile number for logs and UI: 0912***6789. */
+export function maskMobile(mobile: string): string {
+  return mobile.length < 8 ? "***" : `${mobile.slice(0, 4)}***${mobile.slice(-4)}`;
+}
+
+/** Masks a national code for tickets and lists: ******1234. */
+export function maskNationalCode(code: string): string {
+  return code.length < 5 ? "***" : `${"*".repeat(code.length - 4)}${code.slice(-4)}`;
+}

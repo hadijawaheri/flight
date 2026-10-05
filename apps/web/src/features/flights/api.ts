@@ -1,47 +1,51 @@
 import type {
   ApiResponse,
-  FareMatrixItemDto,
-  FareMatrixQuery,
-  FlightDto,
-  FlightSearchQuery,
+  FareCalendarDto,
+  FlightOfferDto,
+  FlightSearchResultDto,
+  PriceAnalysisDto,
+  SeatMapDto,
 } from "@flysmart/contracts";
 
 import { api } from "@/lib/api/client";
 
-export async function searchFlightsApi(query: FlightSearchQuery): Promise<FlightDto[]> {
-  const searchParams = new URLSearchParams();
-  searchParams.set("origin", query.origin);
-  searchParams.set("destination", query.destination);
-  searchParams.set("departureDate", query.departureDate);
-  if (query.returnDate) searchParams.set("returnDate", query.returnDate);
-  if (query.adults) searchParams.set("adults", String(query.adults));
-  if (query.children) searchParams.set("children", String(query.children));
-  if (query.infants) searchParams.set("infants", String(query.infants));
-  if (query.flightClass) searchParams.set("flightClass", query.flightClass);
-  if (query.isCharter !== undefined) searchParams.set("isCharter", String(query.isCharter));
-  if (query.airline) searchParams.set("airline", query.airline);
-  if (query.maxPrice) searchParams.set("maxPrice", String(query.maxPrice));
-  if (query.sortBy) searchParams.set("sortBy", query.sortBy);
-
-  const res = await api<ApiResponse<FlightDto[]>>(`/flights/search?${searchParams.toString()}`);
-  return res.data;
+export interface FlightSearchParams {
+  origin: string;
+  destination: string;
+  date: string;
+  adults: number;
+  children: number;
+  infants: number;
+  cabin: string;
+  sort: string;
+  airlines?: string[];
+  times?: string[];
+  flightType?: string;
+  maxPrice?: number;
 }
 
-export async function getFlightByIdApi(id: string): Promise<FlightDto> {
-  const res = await api<ApiResponse<FlightDto>>(`/flights/${id}`);
-  return res.data;
+function toQuery(params: object): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
+    if (value === undefined || value === null || value === "") continue;
+    search.set(key, Array.isArray(value) ? value.join(",") : String(value));
+  }
+  return search.toString();
 }
 
-export async function getFareMatrixApi(query: FareMatrixQuery): Promise<FareMatrixItemDto[]> {
-  const searchParams = new URLSearchParams({
-    origin: query.origin,
-    destination: query.destination,
-    startDate: query.startDate,
-    days: String(query.days ?? 7),
-  });
-
-  const res = await api<ApiResponse<FareMatrixItemDto[]>>(
-    `/flights/fare-matrix?${searchParams.toString()}`,
-  );
-  return res.data;
-}
+export const flightsApi = {
+  search: async (params: FlightSearchParams) =>
+    (await api<ApiResponse<FlightSearchResultDto>>(`/flights/search?${toQuery(params)}`)).data,
+  offer: async (id: string, mix: { adults: number; children: number; infants: number }) =>
+    (await api<ApiResponse<FlightOfferDto>>(`/flights/${id}?${toQuery(mix)}`)).data,
+  seats: async (id: string) => (await api<ApiResponse<SeatMapDto>>(`/flights/${id}/seats`)).data,
+  analysis: async (id: string) =>
+    (await api<ApiResponse<PriceAnalysisDto>>(`/flights/${id}/price-analysis`)).data,
+  calendar: async (params: {
+    origin: string;
+    destination: string;
+    from: string;
+    days: number;
+    cabin: string;
+  }) => (await api<ApiResponse<FareCalendarDto>>(`/flights/calendar?${toQuery(params)}`)).data,
+};

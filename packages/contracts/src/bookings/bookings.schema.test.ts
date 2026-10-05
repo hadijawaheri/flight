@@ -2,39 +2,33 @@ import { describe, expect, it } from "vitest";
 
 import { createBookingSchema } from "./bookings.schema";
 
-describe("createBookingSchema", () => {
-  it("validates booking creation with passengers and contact info", () => {
-    const bookingInput = {
-      flightId: "fl-12345",
-      passengers: [
-        {
-          firstNameFa: "سارا",
-          lastNameFa: "احمدی",
-          firstNameEn: "Sara",
-          lastNameEn: "Ahmadi",
-          nationalId: "0499370899",
-          birthDate: "1995-08-20",
-          gender: "FEMALE",
-          passengerType: "ADULT",
-          seatPreference: "WINDOW",
-        },
-      ],
-      contactMobile: "09123456789",
-      contactEmail: "sara@example.com",
-      savePassengersToVault: true,
-    };
+const passenger = {
+  firstNameFa: "علی",
+  lastNameFa: "محمدی",
+  firstNameEn: "Ali",
+  lastNameEn: "Mohammadi",
+  nationalId: "0499370899",
+  birthDate: "1990-05-15",
+  gender: "MALE",
+} as const;
 
-    const result = createBookingSchema.safeParse(bookingInput);
-    expect(result.success).toBe(true);
+describe("createBookingSchema", () => {
+  const booking = {
+    outboundFlightId: "THRMHD20261015IR01E",
+    passengers: [passenger],
+    contact: { mobile: "09123456789" },
+    quotedTotal: 2_500_000,
+  };
+
+  it("accepts a one-way booking and defaults the seat preference", () => {
+    const parsed = createBookingSchema.parse(booking);
+    expect(parsed.seatPreference).toBe("ANY");
   });
 
-  it("rejects booking with empty passengers array", () => {
-    const emptyPassengers = {
-      flightId: "fl-12345",
-      passengers: [],
-      contactMobile: "09123456789",
-    };
-    const result = createBookingSchema.safeParse(emptyPassengers);
-    expect(result.success).toBe(false);
+  it("rejects an empty passenger list and duplicated national codes", () => {
+    expect(createBookingSchema.safeParse({ ...booking, passengers: [] }).success).toBe(false);
+    expect(
+      createBookingSchema.safeParse({ ...booking, passengers: [passenger, passenger] }).success,
+    ).toBe(false);
   });
 });

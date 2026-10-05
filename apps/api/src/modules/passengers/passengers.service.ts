@@ -1,105 +1,114 @@
-import type { PassengerDto } from "@flysmart/contracts";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import type { PassengerDto } from "@flysmart/contracts";
 import { Model, Types } from "mongoose";
 
-import type { CreatePassengerDto } from "./dto/create-passenger.dto.js";
-import type { UpdatePassengerDto } from "./dto/update-passenger.dto.js";
+import { AppException } from "../../common/app-exception.js";
+import { parseObjectId } from "../../common/database/object-id.js";
+import type { CreatePassengerDto, UpdatePassengerDto } from "./dto/passenger.dto.js";
 import { toPassengerDto } from "./passengers.mapper.js";
-import { Passenger, type PassengerDocument } from "./schemas/passenger.schema.js";
+import type { PassengerDocument } from "./schemas/passenger.schema.js";
+import { Passenger } from "./schemas/passenger.schema.js";
+
+export const MAX_SAVED_PASSENGERS = 30;
+const DUPLICATE_KEY = 11000;
+
+function isDuplicateKey(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: number }).code === DUPLICATE_KEY
+  );
+}
+
+const NOT_FOUND = "مسافر یافت نشد";
 
 @Injectable()
 export class PassengersService {
   constructor(
-    @InjectModel(Passenger.name)
-    private readonly passengerModel: Model<PassengerDocument>,
+    @InjectModel(Passenger.name) private readonly passengerModel: Model<PassengerDocument>,
   ) {}
 
-  async listByUser(userId: string): Promise<PassengerDto[]> {
-    const docs = await this.passengerModel
-      .find({ userId: new Types.ObjectId(userId), deletedAt: null })
-      .sort({ isDefault: -1, createdAt: -1 })
-      .exec();
-
-    return docs.map(toPassengerDto);
+  async list(userId: string): Promise<PassengerDto[]> {
+    const passengers = await this.passengerModel
+      .find({ userId: new Types.ObjectId(userId) })
+      .sort({ isDefault: -1, createdAt: 1 })
+      .lean();
+    return passengers.map(toPassengerDto);
   }
 
-  async getById(userId: string, passengerId: string): Promise<PassengerDto> {
-    const doc = await this.passengerModel
-      .findOne({
-        _id: new Types.ObjectId(passengerId),
-        userId: new Types.ObjectId(userId),
-        deletedAt: null,
-      })
-      .exec();
-
-    if (!doc) {
-      throw new NotFoundException("مسافر مورد نظر یافت نشد");
+  async create(userId: string, dto: CreatePassengerDto): Promise<PassengerDto> {
+    const owner = new Types.ObjectId(userId);
+    const count = await this.passengerModel.countDocuments({ userId: owner });
+    if (count >= MAX_SAVED_PASSENGERS) {
+      throw new AppException(
+        409,
+        "CONFLICT",
+        `حداکثر ${MAX_SAVED_PASSENGERS} مسافر ذخیره‌شده مجاز است`,
+      );
     }
 
-    return toPassengerDto(doc);
+    // The first saved traveler becomes the default so the booking form can prefill it
+    const isDefault = dto.isDefault || count === 0;
+    try {
+      const created = await this.passengerModel.create({ ...dto, userId: owner, isDefault });
+      if (isDefault) await this.clearOtherDefaults(owner, created._id);
+      return toPassengerDto(created.toObject());
+    } catch (error: unknown) {
+      if (isDuplicateKey(error)) {
+        throw new AppException(409, "CONFLICT", "مسافری با این کد ملی قبلاً ذخیره شده است");
+      }
+      throw error;
+    }
   }
 
-  async create(userId: string, input: CreatePassengerDto): Promise<PassengerDto> {
-    const userObjId = new Types.ObjectId(userId);
-
-    // If this is marked as default, unset existing default
-    if (input.isDefault) {
-      await this.passengerModel.updateMany({ userId: userObjId }, { isDefault: false }).exec();
+  async update(userId: string, id: string, dto: UpdatePassengerDto): Promise<PassengerDto> {
+    const owner = new Types.ObjectId(userId);
+    const passengerId = parseObjectId(id, "PASSENGER_NOT_FOUND", NOT_FOUND);
+    try {
+      const updated = await this.passengerModel
+        .findOneAndUpdate(
+          { _id: passengerId, userId: owner },
+          { $set: dto },
+          { returnDocument: "after" },
+        )
+        .lean();
+      if (!updated) throw new AppException(404, "PASSENGER_NOT_FOUND", NOT_FOUND);
+      if (dto.isDefault) await this.clearOtherDefaults(owner, passengerId);
+      return toPassengerDto(updated);
+    } catch (error: unknown) {
+      if (isDuplicateKey(error)) {
+        throw new AppException(409, "CONFLICT", "مسافری با این کد ملی قبلاً ذخیره شده است");
+      }
+      throw error;
     }
-
-    const created = await this.passengerModel.create({
-      ...input,
-      userId: userObjId,
-    });
-
-    return toPassengerDto(created);
   }
 
-  async update(
-    userId: string,
-    passengerId: string,
-    input: UpdatePassengerDto,
-  ): Promise<PassengerDto> {
-    const userObjId = new Types.ObjectId(userId);
-
-    if (input.isDefault) {
-      await this.passengerModel.updateMany({ userId: userObjId }, { isDefault: false }).exec();
-    }
-
-    const doc = await this.passengerModel
+  async remove(userId: string, id: string): Promise<void> {
+    const owner = new Types.ObjectId(userId);
+    const passengerId = parseObjectId(id, "PASSENGER_NOT_FOUND", NOT_FOUND);
+    const removed = await this.passengerModel
       .findOneAndUpdate(
-        {
-          _id: new Types.ObjectId(passengerId),
-          userId: userObjId,
-          deletedAt: null,
-        },
-        { $set: input },
-        { new: true },
+        { _id: passengerId, userId: owner },
+        { $set: { deletedAt: new Date(), isDefault: false } },
       )
-      .exec();
+      .lean();
+    if (!removed) throw new AppException(404, "PASSENGER_NOT_FOUND", NOT_FOUND);
 
-    if (!doc) {
-      throw new NotFoundException("مسافر مورد نظر یافت نشد");
+    if (removed.isDefault) {
+      const next = await this.passengerModel
+        .findOne({ userId: owner })
+        .sort({ createdAt: 1 })
+        .lean();
+      if (next)
+        await this.passengerModel.updateOne({ _id: next._id }, { $set: { isDefault: true } });
     }
-
-    return toPassengerDto(doc);
   }
 
-  async delete(userId: string, passengerId: string): Promise<void> {
-    const doc = await this.passengerModel
-      .findOneAndUpdate(
-        {
-          _id: new Types.ObjectId(passengerId),
-          userId: new Types.ObjectId(userId),
-          deletedAt: null,
-        },
-        { $set: { deletedAt: new Date() } },
-      )
-      .exec();
-
-    if (!doc) {
-      throw new NotFoundException("مسافر مورد نظر یافت نشد");
-    }
+  private async clearOtherDefaults(owner: Types.ObjectId, keep: Types.ObjectId): Promise<void> {
+    await this.passengerModel.updateMany(
+      { userId: owner, _id: { $ne: keep }, isDefault: true },
+      { $set: { isDefault: false } },
+    );
   }
 }

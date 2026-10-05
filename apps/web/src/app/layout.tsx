@@ -1,11 +1,10 @@
-import "./globals.css";
-
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 
 import { AppProviders } from "@/components/providers/app-providers";
 import { defaultMetadata } from "@/lib/seo";
-import { cn } from "@/lib/utils";
+
+import "./globals.css";
 
 const vazirmatn = Vazirmatn({
   subsets: ["arabic", "latin"],
@@ -15,15 +14,16 @@ const vazirmatn = Vazirmatn({
 
 export const metadata: Metadata = defaultMetadata;
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light dark",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="fa"
-      dir="rtl"
-      suppressHydrationWarning
-      className={cn("antialiased", vazirmatn.variable)}
-    >
-      <body className="bg-background text-foreground min-h-dvh font-sans">
+    <html lang="fa" dir="rtl" suppressHydrationWarning className={vazirmatn.variable}>
+      <body className="bg-background text-foreground min-h-dvh antialiased">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

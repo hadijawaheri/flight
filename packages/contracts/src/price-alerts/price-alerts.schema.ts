@@ -1,35 +1,47 @@
 import { z } from "zod";
 
-import { mobileSchema } from "../common/iran";
+import { isoDateSchema } from "../common/dates";
+import { CABINS, type Cabin } from "../domain/seatmap";
+import { locationCodeSchema } from "../flights/flights.schema";
 
-export const createPriceAlertSchema = z.object({
-  origin: z.string().trim().min(2, "کد مبدا الزامی است").max(10),
-  originName: z.string().trim().min(2, "نام شهر مبدا الزامی است"),
-  destination: z.string().trim().min(2, "کد مقصد الزامی است").max(10),
-  destinationName: z.string().trim().min(2, "نام شهر مقصد الزامی است"),
-  targetMaxPrice: z.number().int().positive("قیمت باید عدد مثبت باشد"),
-  targetDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "فرمت تاریخ YYYY-MM-DD است")
-    .optional(),
-  notifyViaSms: z.boolean().default(true),
-  mobile: mobileSchema.optional(),
-});
+export const PRICE_ALERT_STATUSES = ["ACTIVE", "TRIGGERED", "EXPIRED"] as const;
+export type PriceAlertStatus = (typeof PRICE_ALERT_STATUSES)[number];
 
+export const MAX_ACTIVE_ALERTS = 20;
+
+export const createPriceAlertSchema = z
+  .object({
+    origin: locationCodeSchema,
+    destination: locationCodeSchema,
+    date: isoDateSchema,
+    cabin: z.enum(CABINS).default("ECONOMY"),
+    /** Notify when the cheapest total per adult falls to or below this, rial. */
+    targetPrice: z.number().int().positive(),
+  })
+  .refine((value) => value.origin !== value.destination, {
+    message: "مبدأ و مقصد نباید یکسان باشند",
+    path: ["destination"],
+  });
 export type CreatePriceAlertInput = z.infer<typeof createPriceAlertSchema>;
+
+export const updatePriceAlertSchema = z.object({ targetPrice: z.number().int().positive() });
+export type UpdatePriceAlertInput = z.infer<typeof updatePriceAlertSchema>;
 
 export interface PriceAlertDto {
   id: string;
-  userId: string;
   origin: string;
-  originName: string;
   destination: string;
-  destinationName: string;
-  targetMaxPrice: number;
-  targetDate?: string;
-  currentLowestPrice: number;
-  notifyViaSms: boolean;
-  isActive: boolean;
-  lastTriggeredAt?: string;
+  originCityFa: string;
+  destinationCityFa: string;
+  date: string;
+  cabin: Cabin;
+  targetPrice: number;
+  /** Cheapest total per adult right now; null when no flight operates that day. */
+  currentLowestPrice: number | null;
+  status: PriceAlertStatus;
+  triggeredAt: string | null;
+  triggeredPrice: number | null;
+  /** Flight that matched, so the card can deep-link to it. */
+  triggeredFlightId: string | null;
   createdAt: string;
 }

@@ -1,13 +1,15 @@
 import { Module } from "@nestjs/common";
 
-import { FlightInfraModule } from "../../infra/flight/flight.module.js";
+import { BookingsModule } from "../bookings/bookings.module.js";
+import { FlightsModule } from "../flights/flights.module.js";
+import { KnowledgeModule } from "../knowledge/knowledge.module.js";
 import { AssistantController } from "./assistant.controller.js";
 import { AssistantService } from "./assistant.service.js";
+import { AssistantToolbox } from "./assistant-toolbox.js";
 
 @Module({
-  imports: [FlightInfraModule],
+  imports: [KnowledgeModule, FlightsModule, BookingsModule],
   controllers: [AssistantController],
-  providers: [AssistantService],
-  exports: [AssistantService],
+  providers: [AssistantService, AssistantToolbox],
 })
 export class AssistantModule {}

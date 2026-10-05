@@ -1,4 +1,4 @@
-﻿import { requestOtpSchema, verifyOtpSchema } from "@flysmart/contracts";
+import { requestOtpSchema, verifyOtpSchema } from "@flysmart/contracts";
 
 import { createZodDto } from "../../../common/zod/create-zod-dto.js";
 

@@ -1,41 +1,56 @@
 import { z } from "zod";
 
-export interface CheapDealDto {
-  id: string;
+import { isoDateSchema } from "../common/dates";
+import { type PriceVerdict } from "../pricing/price-insight";
+import type { AirlineRefDto } from "../flights/flights.schema";
+import { locationCodeSchema } from "../flights/flights.schema";
+
+export const flashDealsQuerySchema = z.object({
+  origin: locationCodeSchema.default("THR"),
+  limit: z.coerce.number().int().min(1).max(24).default(8),
+});
+export type FlashDealsQuery = z.infer<typeof flashDealsQuerySchema>;
+
+export const DESTINATION_SCOPES = ["all", "domestic", "international"] as const;
+
+export const exploreQuerySchema = z.object({
+  origin: locationCodeSchema.default("THR"),
+  /** Maximum total per adult, rial. */
+  budget: z.coerce.number().int().positive(),
+  from: isoDateSchema.optional(),
+  /** Length of the window searched for the cheapest day, 7–60. */
+  days: z.coerce.number().int().min(7).max(60).default(30),
+  scope: z.enum(DESTINATION_SCOPES).default("all"),
+});
+export type ExploreQuery = z.infer<typeof exploreQuerySchema>;
+
+export interface DealDto {
   flightId: string;
   origin: string;
-  originCode: string;
   destination: string;
-  destinationCode: string;
-  destinationImage: string;
-  departureDate: string;
-  airline: string;
-  airlineLogo: string;
-  regularPrice: number;
-  dealPrice: number;
+  originCityFa: string;
+  destinationCityFa: string;
+  date: string;
+  airline: AirlineRefDto;
+  pricePerAdult: number;
+  /** Median price of the same flight over the observed window. */
+  typicalPrice: number;
   discountPercent: number;
-  badge: string;
-  remainingSeats: number;
+  verdict: PriceVerdict;
 }
 
-export const budgetExploreQuerySchema = z.object({
-  origin: z.string().trim().min(2).max(10).default("THR"),
-  maxBudget: z.coerce.number().min(1000000, "حداقل بودجه ۱,۰۰۰,۰۰۰ ریال است"),
-  month: z
-    .string()
-    .regex(/^\d{4}-\d{2}$/, "فرمت ماه باید YYYY-MM باشد")
-    .optional(),
-});
-
-export type BudgetExploreQuery = z.infer<typeof budgetExploreQuerySchema>;
-
-export interface BudgetDestinationDto {
+export interface ExploreDestinationDto {
   destination: string;
-  destinationCode: string;
-  destinationImage: string;
-  description: string;
-  minPrice: number;
-  bestDate: string;
-  airline: string;
-  availableFlightsCount: number;
+  cityFa: string;
+  countryFa: string;
+  international: boolean;
+  cheapestPricePerAdult: number;
+  cheapestDate: string;
+  flightId: string;
+  durationMinutes: number;
+}
+
+export interface ExploreResultDto {
+  budget: number;
+  destinations: ExploreDestinationDto[];
 }

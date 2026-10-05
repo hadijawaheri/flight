@@ -1,4 +1,4 @@
-﻿import type { Role } from "@flysmart/contracts";
+import type { Role } from "@flysmart/contracts";
 import type { Request } from "express";
 
 export interface AuthUser {

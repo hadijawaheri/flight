@@ -45,13 +45,13 @@ export function ThemeToggle({ className }: { className?: string }) {
         className={`size-4.5 transition-all duration-500 ${
           isDark
             ? "absolute scale-0 -rotate-90 opacity-0"
-            : "scale-100 rotate-0 text-amber-500 opacity-100"
+            : "text-warning scale-100 rotate-0 opacity-100"
         }`}
       />
       <MoonIcon
         className={`size-4.5 transition-all duration-500 ${
           isDark
-            ? "scale-100 rotate-0 text-sky-400 opacity-100"
+            ? "text-primary scale-100 rotate-0 opacity-100"
             : "absolute scale-0 rotate-90 opacity-0"
         }`}
       />

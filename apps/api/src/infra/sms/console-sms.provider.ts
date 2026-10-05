@@ -16,7 +16,7 @@ export class ConsoleSmsProvider extends SmsProvider {
   }
 
   sendNotification(mobile: string, message: string): Promise<void> {
-    this.logger.info({ mobile, message }, "SMS Notification (console provider)");
+    this.logger.info({ mobile, message }, "SMS notification (console provider)");
     return Promise.resolve();
   }
 }

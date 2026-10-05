@@ -1,1 +1,2 @@
-export { ProfileForm } from "./components/profile-form";
+// Obsolete file from the previous implementation. Delete it.
+export {};

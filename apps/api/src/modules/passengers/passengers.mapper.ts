@@ -1,23 +1,21 @@
 import type { PassengerDto } from "@flysmart/contracts";
 
-import type { PassengerDocument } from "./schemas/passenger.schema.js";
+import type { Passenger } from "./schemas/passenger.schema.js";
 
-export function toPassengerDto(doc: PassengerDocument): PassengerDto {
+export function toPassengerDto(passenger: Passenger): PassengerDto {
   return {
-    id: doc._id.toHexString(),
-    userId: doc.userId.toHexString(),
-    firstNameFa: doc.firstNameFa,
-    lastNameFa: doc.lastNameFa,
-    firstNameEn: doc.firstNameEn,
-    lastNameEn: doc.lastNameEn,
-    nationalId: doc.nationalId,
-    birthDate: doc.birthDate,
-    gender: doc.gender,
-    passengerType: doc.passengerType,
-    passportNumber: doc.passportNumber ?? null,
-    passportExpiry: doc.passportExpiry ?? null,
-    isDefault: doc.isDefault ?? false,
-    createdAt: doc.createdAt ? doc.createdAt.toISOString() : new Date().toISOString(),
-    updatedAt: doc.updatedAt ? doc.updatedAt.toISOString() : new Date().toISOString(),
+    id: passenger._id.toString(),
+    firstNameFa: passenger.firstNameFa,
+    lastNameFa: passenger.lastNameFa,
+    firstNameEn: passenger.firstNameEn,
+    lastNameEn: passenger.lastNameEn,
+    nationalId: passenger.nationalId,
+    birthDate: passenger.birthDate,
+    gender: passenger.gender,
+    passportNumber: passenger.passportNumber,
+    passportExpiry: passenger.passportExpiry,
+    isDefault: passenger.isDefault,
+    createdAt: passenger.createdAt.toISOString(),
+    updatedAt: passenger.updatedAt.toISOString(),
   };
 }

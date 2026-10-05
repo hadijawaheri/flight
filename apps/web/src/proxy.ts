@@ -3,11 +3,12 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const API_ORIGIN = process.env.INTERNAL_API_URL ?? "http://localhost:7781";
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PROTECTED_PREFIXES = ["/dashboard", "/checkout"];
 
 function redirectToSignIn(request: NextRequest): NextResponse {
   const url = new URL("/sign-in", request.url);
-  url.searchParams.set("next", request.nextUrl.pathname);
+  // Keep the query: /checkout/new is meaningless without the flights it was opened with.
+  url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
   const response = NextResponse.redirect(url);
   response.cookies.delete(COOKIE_NAMES.access);
   response.cookies.delete(COOKIE_NAMES.refresh);

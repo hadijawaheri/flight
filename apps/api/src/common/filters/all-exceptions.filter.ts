@@ -1,6 +1,6 @@
-﻿import type { ApiErrorBody, ErrorCode } from "@flysmart/contracts";
 import type { ArgumentsHost, ExceptionFilter } from "@nestjs/common";
 import { Catch, HttpException } from "@nestjs/common";
+import type { ApiErrorBody, ErrorCode } from "@flysmart/contracts";
 import type { Request, Response } from "express";
 import { PinoLogger } from "nestjs-pino";
 
@@ -44,6 +44,7 @@ export function toErrorBody(exception: unknown, requestId?: string): ApiErrorBod
       statusCode: exception.getStatus(),
       code: exception.code,
       message: messageOf(exception),
+      ...(exception.details === undefined ? {} : { details: exception.details }),
       requestId,
     };
   }

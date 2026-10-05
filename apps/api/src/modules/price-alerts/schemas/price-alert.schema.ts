@@ -1,5 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { type HydratedDocument, Types } from "mongoose";
+import type { Cabin, PriceAlertStatus } from "@flysmart/contracts";
+import { CABINS, PRICE_ALERT_STATUSES } from "@flysmart/contracts";
+import type { HydratedDocument } from "mongoose";
+import { Types } from "mongoose";
 
 import { softDeletePlugin } from "../../../common/database/soft-delete.plugin.js";
 
@@ -7,51 +10,47 @@ import { softDeletePlugin } from "../../../common/database/soft-delete.plugin.js
 export class PriceAlert {
   _id!: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "User", required: true, index: true })
+  @Prop({ type: Types.ObjectId, required: true })
   userId!: Types.ObjectId;
 
-  @Prop({ type: String, required: true, trim: true })
+  // Airport or city-group code, as the traveller searched it (e.g. TEH)
+  @Prop({ type: String, required: true })
   origin!: string;
 
-  @Prop({ type: String, required: true, trim: true })
-  originName!: string;
-
-  @Prop({ type: String, required: true, trim: true })
+  @Prop({ type: String, required: true })
   destination!: string;
 
-  @Prop({ type: String, required: true, trim: true })
-  destinationName!: string;
+  @Prop({ type: String, required: true })
+  date!: string;
 
+  @Prop({ type: String, enum: CABINS, default: "ECONOMY" })
+  cabin!: Cabin;
+
+  /** Rial per adult, taxes and fees included. */
   @Prop({ type: Number, required: true })
-  targetMaxPrice!: number;
+  targetPrice!: number;
 
-  @Prop({ type: String, default: null })
-  targetDate?: string | null;
-
-  @Prop({ type: Number, default: 0 })
-  currentLowestPrice!: number;
-
-  @Prop({ type: Boolean, default: true })
-  notifyViaSms!: boolean;
-
-  @Prop({ type: String, default: null, trim: true })
-  mobile?: string | null;
-
-  @Prop({ type: Boolean, default: true })
-  isActive!: boolean;
+  @Prop({ type: String, enum: PRICE_ALERT_STATUSES, default: "ACTIVE" })
+  status!: PriceAlertStatus;
 
   @Prop({ type: Date, default: null })
-  lastTriggeredAt?: Date | null;
+  triggeredAt!: Date | null;
 
-  deletedAt?: Date | null;
+  @Prop({ type: Number, default: null })
+  triggeredPrice!: number | null;
+
+  @Prop({ type: String, default: null })
+  triggeredFlightId!: string | null;
+
   createdAt!: Date;
   updatedAt!: Date;
+
+  // Added by softDeletePlugin
+  deletedAt?: Date | null;
 }
 
 export type PriceAlertDocument = HydratedDocument<PriceAlert>;
 export const PriceAlertSchema = SchemaFactory.createForClass(PriceAlert);
 PriceAlertSchema.plugin(softDeletePlugin);
-PriceAlertSchema.index(
-  { userId: 1, isActive: 1 },
-  { partialFilterExpression: { deletedAt: null } },
-);
+PriceAlertSchema.index({ userId: 1, status: 1, date: 1 });
+PriceAlertSchema.index({ status: 1, date: 1 });

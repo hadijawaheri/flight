@@ -1,4 +1,4 @@
-﻿import "server-only";
+import "server-only";
 
 import type { ApiResponse, UserDto } from "@flysmart/contracts";
 import { redirect } from "next/navigation";

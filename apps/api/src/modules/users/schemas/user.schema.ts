@@ -1,6 +1,6 @@
-﻿import type { Role } from "@flysmart/contracts";
-import { ROLES } from "@flysmart/contracts";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import type { Role } from "@flysmart/contracts";
+import { ROLES } from "@flysmart/contracts";
 import type { HydratedDocument, Types } from "mongoose";
 
 import { softDeletePlugin } from "../../../common/database/soft-delete.plugin.js";
@@ -9,7 +9,7 @@ import { softDeletePlugin } from "../../../common/database/soft-delete.plugin.js
 export class User {
   _id!: Types.ObjectId;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ type: String, required: true, trim: true })
   mobile!: string;
 
   @Prop({ type: String, default: null, trim: true })

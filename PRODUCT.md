@@ -1,21 +1,37 @@
-# FlySmart (پرواز پلاس) - Product Specification
+# FlySmart (پرواز پلاس) — Product Specification
 
 ## Overview
 
-FlySmart (سامانه پرواز پلاس) is an aviation-grade flight search, instant reservation, and AI-powered flight regulation assistant platform designed for domestic and international air travelers in Iran and the region.
+FlySmart is a flight-ticket booking site for domestic and international travellers in Iran. Its edge is
+what happens before and around the purchase: it tells you whether to buy now or wait, and it knows the rules
+(baggage, documents, refunds, delays, airports) well enough to answer and to calculate.
 
-## Core Value Propositions
+## Core value propositions
 
-1. **Zero-Friction 1-Click Booking (Travelers Vault):** National ID and passenger credentials are stored securely once and auto-filled with 1 click on any future booking.
-2. **Predictive Fare Analytics:** Live price advice (BUY_NOW vs WAIT) based on historical route volatility and remaining seat demand.
-3. **SMS Price-Drop Watchdog:** Users set a budget ceiling for desired routes and receive real-time SMS notifications when seats drop below target.
-4. **Interactive Budget Explorer:** Travelers explore all accessible destinations fitting their target travel budget.
-5. **AI Aviation Assistant:** Comprehensive, real-time knowledge base covering all 18 standard airline and airport regulation domains (baggage, dangerous goods/powerbanks, pet transport, pregnancy, Mehrabad terminal maps, exit tax, delay compensation rights, refund charts).
+1. **Price analysis (BUY_NOW / WAIT):** every result carries a verdict from the flight's own price history,
+   days to departure and seats left; the detail page shows reasons, confidence, a 7-day expectation, a price
+   chart with forecast and cheaper nearby days. Always presented as an estimate.
+2. **Assistant that knows the rules:** a Claude-backed assistant grounded in a structured knowledge base
+   (baggage, dangerous goods, documents, international formalities, refunds, delay rights, check-in, children,
+   health, seats, pets, platform). It computes (battery limits, excess baggage, refund estimate, price advice,
+   cheapest flights), cites its sources and flags anything the airline decides or that changes often. Works
+   offline from the same base when no API key is set.
+3. **Honest fares:** the stepped refund table, base/tax/service-fee breakdown and a 15-minute seat hold are
+   visible before payment; the fare is re-checked at booking (409 `FARE_CHANGED`).
+4. **Traveller vault:** save passengers once; checkout fills in with one choice.
+5. **Price alerts and budget explorer:** a target price per route/day; "where can I go for X?" over the next 30 days.
 
-## Target Surfaces
+## Surfaces
 
-- **Marketing Landing Page (`/`):** Persuade mode. High-impact aerodynamic hero, integrated flight search bar, flash deals carousel, budget explorer, and travelers vault feature showcase.
-- **Flight Discovery (`/flights`):** Operate mode. 7-day fare matrix calendar, granular filters (airlines, price, stops, time), real-time pricing cards with refund drawer.
-- **Checkout & Reservation (`/checkout/[bookingId]`):** Operate mode. 1-click traveler injection, seat assignment, instant payment, ticket voucher issuance.
-- **User Dashboard (`/dashboard`):** Operate mode. Active bookings, e-tickets, price alert manager, saved companions.
-- **Aviation Assistant Widget:** Read & Assist mode. Natural language Persian & English question answering with verified regulatory citations.
+- `/` landing: search, flash deals, assistant starters.
+- `/flights` results: fare calendar strip, filters (airline, time, type, price), sort, round-trip two-step choice.
+- `/flights/[id]` detail: fare breakdown, refund policy, price analysis, alert.
+- `/checkout/new` passengers + contact; `/checkout/[id]` hold timer, seat map, payment, result states.
+- `/dashboard` overview, bookings (e-ticket, print, cancel with refund quote), travellers, price alerts, profile.
+- `/rules`, `/rules/[id]`, `/airports/[code]`: server-rendered, indexable, each rule labelled by reliability.
+- `/assistant` and a floating widget that adopts the current flight or booking as context.
+
+## Out of scope / simulated
+
+Real flight inventory and payment gateway (both simulated behind provider interfaces), SMS delivery of alerts,
+at-rest encryption of passenger identity data (must be added before real use).

@@ -1,18 +1,23 @@
-import fs from "node:fs";
-import path from "node:path";
+// `output: "standalone"` does not copy static assets; the standalone server expects them beside it.
+import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const srcStatic = ".next/static";
-const destStatic = ".next/standalone/apps/web/.next/static";
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const standalone = join(root, ".next", "standalone", "apps", "web");
 
-if (fs.existsSync(srcStatic)) {
-  fs.mkdirSync(path.dirname(destStatic), { recursive: true });
-  fs.cpSync(srcStatic, destStatic, { recursive: true });
+if (!existsSync(standalone)) {
+  console.error("postbuild: .next/standalone/apps/web not found; run `next build` first.");
+  process.exit(1);
 }
 
-const srcPublic = "public";
-const destPublic = ".next/standalone/apps/web/public";
-
-if (fs.existsSync(srcPublic)) {
-  fs.mkdirSync(path.dirname(destPublic), { recursive: true });
-  fs.cpSync(srcPublic, destPublic, { recursive: true });
+const copies = [
+  [join(root, ".next", "static"), join(standalone, ".next", "static")],
+  [join(root, "public"), join(standalone, "public")],
+];
+for (const [from, to] of copies) {
+  if (!existsSync(from)) continue;
+  mkdirSync(dirname(to), { recursive: true });
+  cpSync(from, to, { recursive: true });
 }
+console.log("postbuild: copied static assets into the standalone output.");

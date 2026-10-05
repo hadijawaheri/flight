@@ -11,16 +11,21 @@ import { LoggerModule } from "nestjs-pino";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
 import { RolesGuard } from "./common/guards/roles.guard.js";
+import { ClockModule } from "./common/clock/clock.module.js";
 import { ZodValidationPipe } from "./common/zod/zod-validation.pipe.js";
 import type { Env } from "./config/env.js";
 import { validateEnv } from "./config/env.js";
 import { HealthModule } from "./health/health.module.js";
+import { LlmModule } from "./infra/ai/llm.module.js";
+import { FlightProviderModule } from "./infra/flight/flight-provider.module.js";
+import { PaymentProviderModule } from "./infra/payment/payment-provider.module.js";
 import { SmsModule } from "./infra/sms/sms.module.js";
 import { AssistantModule } from "./modules/assistant/assistant.module.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { BookingsModule } from "./modules/bookings/bookings.module.js";
 import { DealsModule } from "./modules/deals/deals.module.js";
 import { FlightsModule } from "./modules/flights/flights.module.js";
+import { KnowledgeModule } from "./modules/knowledge/knowledge.module.js";
 import { PassengersModule } from "./modules/passengers/passengers.module.js";
 import { PaymentsModule } from "./modules/payments/payments.module.js";
 import { PriceAlertsModule } from "./modules/price-alerts/price-alerts.module.js";
@@ -68,6 +73,10 @@ import { UsersModule } from "./modules/users/users.module.js";
       }),
     }),
     JwtModule.register({ global: true }),
+    ClockModule,
+    FlightProviderModule,
+    PaymentProviderModule,
+    LlmModule,
     SmsModule,
     HealthModule,
     UsersModule,
@@ -78,6 +87,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     PriceAlertsModule,
     BookingsModule,
     PaymentsModule,
+    KnowledgeModule,
     AssistantModule,
   ],
   providers: [

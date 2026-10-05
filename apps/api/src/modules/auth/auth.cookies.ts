@@ -1,4 +1,4 @@
-﻿import { COOKIE_NAMES } from "@flysmart/contracts";
+import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { Response } from "express";
 
 export const ACCESS_TTL_MS = 15 * 60 * 1000;

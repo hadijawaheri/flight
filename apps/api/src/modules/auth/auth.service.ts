@@ -1,4 +1,4 @@
-﻿import {
+import {
   createHash,
   createHmac,
   randomBytes,
@@ -7,11 +7,11 @@
   timingSafeEqual,
 } from "node:crypto";
 
-import type { UserDto } from "@flysmart/contracts";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { InjectModel } from "@nestjs/mongoose";
+import type { UserDto } from "@flysmart/contracts";
 import { Model } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";

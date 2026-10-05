@@ -1,26 +1,17 @@
-import type {
-  ApiResponse,
-  BudgetDestinationDto,
-  BudgetExploreQuery,
-  CheapDealDto,
-} from "@flysmart/contracts";
+import type { ApiResponse, DealDto, ExploreResultDto } from "@flysmart/contracts";
 
 import { api } from "@/lib/api/client";
 
-export async function getCheapDealsApi(): Promise<CheapDealDto[]> {
-  const res = await api<ApiResponse<CheapDealDto[]>>("/deals");
-  return res.data;
-}
-
-export async function exploreBudgetApi(query: BudgetExploreQuery): Promise<BudgetDestinationDto[]> {
-  const searchParams = new URLSearchParams({
-    origin: query.origin,
-    maxBudget: String(query.maxBudget),
-  });
-  if (query.month) searchParams.set("month", query.month);
-
-  const res = await api<ApiResponse<BudgetDestinationDto[]>>(
-    `/deals/explore?${searchParams.toString()}`,
-  );
-  return res.data;
-}
+export const dealsApi = {
+  flash: async (origin: string, limit = 8) =>
+    (await api<ApiResponse<DealDto[]>>(`/deals/flash?origin=${origin}&limit=${limit}`)).data,
+  explore: async (params: { origin: string; budget: number; scope: string; days?: number }) => {
+    const search = new URLSearchParams({
+      origin: params.origin,
+      budget: String(params.budget),
+      scope: params.scope,
+      days: String(params.days ?? 30),
+    });
+    return (await api<ApiResponse<ExploreResultDto>>(`/deals/explore?${search.toString()}`)).data;
+  },
+};

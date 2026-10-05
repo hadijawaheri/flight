@@ -1,17 +1,29 @@
-import type { PaymentInitiateResponseDto, PaymentReceiptDto } from "@flysmart/contracts";
+export type PaymentOutcome = "SUCCESS" | "FAILURE";
+
+export interface ChargeRequest {
+  paymentId: string;
+  bookingId: string;
+  /** Rial. */
+  amount: number;
+  description: string;
+  /** Only the simulated gateway honours this; real gateways decide on their own. */
+  requestedOutcome: PaymentOutcome;
+}
+
+export type ChargeResult =
+  { status: "SUCCEEDED"; referenceId: string } | { status: "FAILED"; reason: string };
+
+export interface RefundRequest {
+  paymentId: string;
+  referenceId: string;
+  amount: number;
+}
 
 export abstract class PaymentProvider {
-  abstract initiate(
-    bookingId: string,
-    amount: number,
-    description: string,
-    callbackUrl: string,
-  ): Promise<PaymentInitiateResponseDto>;
+  abstract readonly name: string;
+  /** True for gateways that move no real money. */
+  abstract readonly simulated: boolean;
 
-  abstract verify(
-    authority: string,
-    status: string,
-    bookingId: string,
-    expectedAmount: number,
-  ): Promise<PaymentReceiptDto>;
+  abstract charge(request: ChargeRequest): Promise<ChargeResult>;
+  abstract refund(request: RefundRequest): Promise<{ referenceId: string }>;
 }

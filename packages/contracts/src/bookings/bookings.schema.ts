@@ -1,88 +1,196 @@
 import { z } from "zod";
 
-import { mobileSchema, nationalCodeSchema } from "../common/iran";
-import type { FlightDto } from "../flights/flights.schema";
-import type { PassengerType } from "../passengers/passengers.schema";
-import { GENDERS, PASSENGER_TYPES } from "../passengers/passengers.schema";
+import { mobileSchema } from "../common/iran";
+import type { FareBreakdown, PassengerType } from "../domain/fare";
+import type { PaymentDto } from "../payments/payments.schema";
+import type { RefundPolicy, RefundResult } from "../domain/refund";
+import { parseSeatNumber } from "../domain/seatmap";
+import { flightIdSchema } from "../flights/flight-id";
+import type { FlightSummaryDto } from "../flights/flights.schema";
+import { passengerIdentitySchema } from "../passengers/passengers.schema";
 
-export const BOOKING_STATUSES = [
-  "PENDING_PAYMENT",
-  "CONFIRMED",
-  "CANCELLED",
-  "EXPIRED",
-  "REFUNDED",
-] as const;
+export const BOOKING_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED", "EXPIRED"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
-export const bookingPassengerInputSchema = z.object({
-  passengerId: z.string().optional(),
-  firstNameFa: z.string().trim().min(2, "نام فارسی الزامی است"),
-  lastNameFa: z.string().trim().min(2, "نام خانوادگی فارسی الزامی است"),
-  firstNameEn: z.string().trim().min(2, "نام انگلیسی الزامی است"),
-  lastNameEn: z.string().trim().min(2, "نام خانوادگی انگلیسی الزامی است"),
-  nationalId: nationalCodeSchema,
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "تاریخ تولد نامعتبر است"),
-  gender: z.enum(GENDERS),
-  passengerType: z.enum(PASSENGER_TYPES).default("ADULT"),
-  passportNumber: z.string().trim().optional().nullable(),
-  seatPreference: z.enum(["WINDOW", "AISLE", "ANY"]).default("ANY"),
-  selectedSeatNumber: z.string().optional(),
+export const SLICE_DIRECTIONS = ["OUTBOUND", "RETURN"] as const;
+export type SliceDirection = (typeof SLICE_DIRECTIONS)[number];
+
+export const SEAT_PREFERENCES = ["ANY", "WINDOW", "AISLE"] as const;
+
+/** Minutes a seat is held while the traveller pays. */
+export const BOOKING_HOLD_MINUTES = 15;
+
+export const bookingContactSchema = z.object({
+  mobile: mobileSchema,
+  email: z
+    .string()
+    .trim()
+    .email("ایمیل معتبر نیست")
+    .max(120)
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
+export type BookingContactInput = z.infer<typeof bookingContactSchema>;
 
-export type BookingPassengerInput = z.infer<typeof bookingPassengerInputSchema>;
-
-export const createBookingSchema = z.object({
-  flightId: z.string().min(1, "شناسه پرواز الزامی است"),
-  passengers: z
-    .array(bookingPassengerInputSchema)
-    .min(1, "حداقل یک مسافر الزامی است")
-    .max(9, "حداکثر ۹ مسافر در یک رزرو مجاز است"),
-  contactMobile: mobileSchema,
-  contactEmail: z.string().email("ایمیل معتبر نیست").optional().nullable(),
-  savePassengersToVault: z.boolean().default(true),
+export const bookingPassengerSchema = passengerIdentitySchema.extend({
+  /** Present when the identity came from the traveler vault. */
+  savedPassengerId: z.string().optional(),
 });
+export type BookingPassengerInput = z.infer<typeof bookingPassengerSchema>;
 
+export const createBookingSchema = z
+  .object({
+    outboundFlightId: flightIdSchema,
+    returnFlightId: flightIdSchema.optional(),
+    passengers: z.array(bookingPassengerSchema).min(1, "حداقل یک مسافر لازم است").max(9),
+    contact: bookingContactSchema,
+    /** Grand total the traveller saw, rial; a mismatch means the fare changed (409 FARE_CHANGED). */
+    quotedTotal: z.number().int().positive(),
+    seatPreference: z.enum(SEAT_PREFERENCES).default("ANY"),
+  })
+  .superRefine((value, ctx) => {
+    const ids = new Set(value.passengers.map((passenger) => passenger.nationalId));
+    if (ids.size !== value.passengers.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "کد ملی مسافران نباید تکراری باشد",
+        path: ["passengers"],
+      });
+    }
+  });
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 
-export const updateBookingSchema = z.object({
-  passengers: z.array(bookingPassengerInputSchema).min(1).max(9).optional(),
-  contactMobile: mobileSchema.optional(),
-  contactEmail: z.string().email("ایمیل معتبر نیست").optional().nullable(),
-  savePassengersToVault: z.boolean().default(false),
+export const seatSelectionSchema = z.object({
+  slice: z.enum(SLICE_DIRECTIONS),
+  passengerIndex: z.number().int().min(0).max(8),
+  seat: z
+    .string()
+    .trim()
+    .transform((value) => value.toUpperCase())
+    .refine((value) => parseSeatNumber(value) !== null, "شماره‌ی صندلی معتبر نیست"),
 });
 
-export type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
+export const assignSeatsSchema = z
+  .object({ seats: z.array(seatSelectionSchema).min(1).max(18) })
+  .superRefine((value, ctx) => {
+    const seen = new Set<string>();
+    value.seats.forEach((selection, index) => {
+      const key = `${selection.slice}:${selection.seat}`;
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "یک صندلی برای دو مسافر انتخاب شده است",
+          path: ["seats", index],
+        });
+      }
+      seen.add(key);
+    });
+  });
+export type AssignSeatsInput = z.infer<typeof assignSeatsSchema>;
 
-export interface TicketDto {
-  ticketNumber: string;
-  passengerName: string;
-  passengerNationalId: string;
-  passengerType: PassengerType;
-  seatNumber: string;
-  price: number;
-  barcode: string;
-  status: "ISSUED" | "CANCELLED";
+export const listBookingsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(10),
+  status: z.enum(BOOKING_STATUSES).optional(),
+  /** `upcoming` hides flown and cancelled trips; `past` shows only them. */
+  when: z.enum(["upcoming", "past"]).optional(),
+});
+export type ListBookingsQuery = z.infer<typeof listBookingsQuerySchema>;
+
+/* ---------------------------------- response shapes ---------------------------------- */
+
+export interface BookingPassengerDto {
+  index: number;
+  type: PassengerType;
+  firstNameFa: string;
+  lastNameFa: string;
+  firstNameEn: string;
+  lastNameEn: string;
+  /** Masked: ******1234. */
+  nationalIdMasked: string;
+  passportNumberMasked: string | null;
+  seats: Partial<Record<SliceDirection, string>>;
+  tickets: Partial<Record<SliceDirection, string>>;
 }
 
-export interface BookingPassengerDto extends BookingPassengerInput {
-  id: string;
-  price: number;
-  seatNumber: string;
+export interface BookingSliceDto {
+  direction: SliceDirection;
+  flight: FlightSummaryDto;
+  fare: FareBreakdown;
+  seatFees: number;
+  refundPolicy: RefundPolicy;
+  /** True once the flight has departed. */
+  departed: boolean;
+}
+
+export interface BookingContactDto {
+  mobile: string;
+  email: string | null;
+}
+
+export interface BookingTotalsDto {
+  fareTotal: number;
+  seatFeesTotal: number;
+  total: number;
+}
+
+export interface RefundSummaryDto {
+  refundAmount: number;
+  penaltyAmount: number;
+  nonRefundableFees: number;
+  processedAt: string;
 }
 
 export interface BookingDto {
   id: string;
-  bookingReference: string; // PNR
-  userId: string;
-  flight: FlightDto;
-  passengers: BookingPassengerDto[];
-  tickets: TicketDto[];
-  totalAmount: number;
+  /** Six-character booking reference shown on the ticket. */
+  pnr: string;
   status: BookingStatus;
-  contactMobile: string;
-  contactEmail?: string | null;
-  paymentId?: string | null;
-  expiresAt: string;
+  slices: BookingSliceDto[];
+  passengers: BookingPassengerDto[];
+  contact: BookingContactDto;
+  totals: BookingTotalsDto;
+  /** Seats are released when this passes without payment. */
+  holdExpiresAt: string | null;
+  paidAt: string | null;
+  cancelledAt: string | null;
+  refund: RefundSummaryDto | null;
   createdAt: string;
-  paidAt?: string | null;
+}
+
+export interface BookingListItemDto {
+  id: string;
+  pnr: string;
+  status: BookingStatus;
+  originCode: string;
+  destinationCode: string;
+  originCityFa: string;
+  destinationCityFa: string;
+  departureUtc: string;
+  returnDepartureUtc: string | null;
+  passengerCount: number;
+  total: number;
+  createdAt: string;
+}
+
+export interface RefundQuoteSliceDto {
+  direction: SliceDirection;
+  hoursBeforeDeparture: number;
+  result: RefundResult;
+}
+
+export interface RefundQuoteDto {
+  bookingId: string;
+  cancellable: boolean;
+  /** Why cancelling is impossible, when `cancellable` is false. */
+  blockedReason: string | null;
+  slices: RefundQuoteSliceDto[];
+  totalRefund: number;
+  totalPenalty: number;
+  totalNonRefundableFees: number;
+}
+
+export interface PayBookingResultDto {
+  payment: PaymentDto;
+  booking: BookingDto;
 }

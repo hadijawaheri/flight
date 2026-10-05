@@ -1,5 +1,6 @@
 "use client";
 
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import type { PropsWithChildren } from "react";
 
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -12,12 +13,14 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <ThemeProvider>
       <DirectionProvider dir="rtl">
-        <QueryProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster dir="rtl" position="top-center" closeButton />
-          </TooltipProvider>
-        </QueryProvider>
+        <NuqsAdapter>
+          <QueryProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster dir="rtl" position="top-center" closeButton />
+            </TooltipProvider>
+          </QueryProvider>
+        </NuqsAdapter>
       </DirectionProvider>
     </ThemeProvider>
   );

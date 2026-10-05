@@ -1,7 +1,7 @@
-﻿import type { Role } from "@flysmart/contracts";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
+import type { Role } from "@flysmart/contracts";
 
 import { ROLES_KEY } from "../decorators/roles.decorator.js";
 import type { AuthedRequest } from "../types/auth.js";
@@ -18,7 +18,7 @@ export class RolesGuard implements CanActivate {
     if (!required?.length) return true;
 
     const { user } = ctx.switchToHttp().getRequest<AuthedRequest>();
-    if (!required.includes(user.role)) throw new ForbiddenException("دسترسی غیرمجاز است");
+    if (!user || !required.includes(user.role)) throw new ForbiddenException("دسترسی غیرمجاز است");
     return true;
   }
 }

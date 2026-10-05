@@ -1,51 +1,34 @@
-import type { CreatePriceAlertInput } from "@flysmart/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import {
-  createPriceAlertApi,
-  deletePriceAlertApi,
-  listPriceAlertsApi,
-  togglePriceAlertApi,
-} from "./api";
+import { priceAlertsApi } from "./api";
 
-export const priceAlertKeys = {
-  all: ["price-alerts"] as const,
-  list: () => [...priceAlertKeys.all, "list"] as const,
-};
+export const priceAlertKeys = { all: ["price-alerts"] as const };
 
 export function usePriceAlerts() {
-  return useQuery({
-    queryKey: priceAlertKeys.list(),
-    queryFn: listPriceAlertsApi,
-  });
+  return useQuery({ queryKey: priceAlertKeys.all, queryFn: priceAlertsApi.list });
 }
 
 export function useCreatePriceAlert() {
-  const queryClient = useQueryClient();
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (input: CreatePriceAlertInput) => createPriceAlertApi(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: priceAlertKeys.list() });
-    },
+    mutationFn: priceAlertsApi.create,
+    onSuccess: () => client.invalidateQueries({ queryKey: priceAlertKeys.all }),
   });
 }
 
-export function useTogglePriceAlert() {
-  const queryClient = useQueryClient();
+export function useUpdatePriceAlert() {
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => togglePriceAlertApi(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: priceAlertKeys.list() });
-    },
+    mutationFn: ({ id, targetPrice }: { id: string; targetPrice: number }) =>
+      priceAlertsApi.update(id, { targetPrice }),
+    onSuccess: () => client.invalidateQueries({ queryKey: priceAlertKeys.all }),
   });
 }
 
 export function useDeletePriceAlert() {
-  const queryClient = useQueryClient();
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => deletePriceAlertApi(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: priceAlertKeys.list() });
-    },
+    mutationFn: priceAlertsApi.remove,
+    onSuccess: () => client.invalidateQueries({ queryKey: priceAlertKeys.all }),
   });
 }

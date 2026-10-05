@@ -32,13 +32,18 @@ export async function api<T>(path: string, { json, ...init }: ApiInit = {}): Pro
   if (res.status === 401 && !path.startsWith("/auth/")) {
     if (await refreshSession()) {
       res = await send();
-    } else if (typeof window !== "undefined") {
+    } else if (typeof window !== "undefined" && isPrivateArea(window.location.pathname)) {
       // Hard navigation on purpose: drops all client state of the expired session
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign(
-        `${paths.signIn}?next=${encodeURIComponent(window.location.pathname)}`,
+        `${paths.signIn}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
       );
     }
   }
   return parseResponse<T>(res);
+}
+
+// Public pages (search, rules, assistant) must keep working for visitors without a session
+function isPrivateArea(pathname: string): boolean {
+  return pathname.startsWith("/dashboard") || pathname.startsWith("/checkout");
 }

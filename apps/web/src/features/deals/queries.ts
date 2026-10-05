@@ -1,27 +1,19 @@
-import type { BudgetExploreQuery } from "@flysmart/contracts";
 import { useQuery } from "@tanstack/react-query";
 
-import { exploreBudgetApi, getCheapDealsApi } from "./api";
+import { dealsApi } from "./api";
 
-export const dealKeys = {
-  all: ["deals"] as const,
-  list: () => [...dealKeys.all, "list"] as const,
-  budget: (query: BudgetExploreQuery) => [...dealKeys.all, "budget", query] as const,
-};
-
-export function useCheapDeals() {
+export function useFlashDeals(origin: string, limit = 8) {
   return useQuery({
-    queryKey: dealKeys.list(),
-    queryFn: getCheapDealsApi,
-    staleTime: 60_000,
+    queryKey: ["deals", "flash", origin, limit],
+    queryFn: () => dealsApi.flash(origin, limit),
+    staleTime: 5 * 60_000,
   });
 }
 
-export function useBudgetExplore(query: BudgetExploreQuery, enabled = true) {
+export function useExplore(params: { origin: string; budget: number; scope: string } | null) {
   return useQuery({
-    queryKey: dealKeys.budget(query),
-    queryFn: () => exploreBudgetApi(query),
-    enabled,
-    staleTime: 60_000,
+    queryKey: ["deals", "explore", params],
+    queryFn: () => dealsApi.explore(params as NonNullable<typeof params>),
+    enabled: params !== null,
   });
 }

@@ -1,4 +1,4 @@
-﻿import type { ApiResponse, RequestOtpInput, UserDto, VerifyOtpInput } from "@flysmart/contracts";
+import type { ApiResponse, RequestOtpInput, UserDto, VerifyOtpInput } from "@flysmart/contracts";
 
 import { api } from "@/lib/api/client";
 

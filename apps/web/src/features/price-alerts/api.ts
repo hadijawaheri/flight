@@ -1,29 +1,18 @@
-import type { ApiResponse, CreatePriceAlertInput, PriceAlertDto } from "@flysmart/contracts";
+import type {
+  ApiResponse,
+  CreatePriceAlertInput,
+  PriceAlertDto,
+  UpdatePriceAlertInput,
+} from "@flysmart/contracts";
 
 import { api } from "@/lib/api/client";
 
-export async function listPriceAlertsApi(): Promise<PriceAlertDto[]> {
-  const res = await api<ApiResponse<PriceAlertDto[]>>("/price-alerts");
-  return res.data;
-}
-
-export async function createPriceAlertApi(input: CreatePriceAlertInput): Promise<PriceAlertDto> {
-  const res = await api<ApiResponse<PriceAlertDto>>("/price-alerts", {
-    method: "POST",
-    json: input,
-  });
-  return res.data;
-}
-
-export async function togglePriceAlertApi(id: string): Promise<PriceAlertDto> {
-  const res = await api<ApiResponse<PriceAlertDto>>(`/price-alerts/${id}/toggle`, {
-    method: "PATCH",
-  });
-  return res.data;
-}
-
-export async function deletePriceAlertApi(id: string): Promise<void> {
-  await api(`/price-alerts/${id}`, {
-    method: "DELETE",
-  });
-}
+export const priceAlertsApi = {
+  list: async () => (await api<ApiResponse<PriceAlertDto[]>>("/price-alerts")).data,
+  create: async (input: CreatePriceAlertInput) =>
+    (await api<ApiResponse<PriceAlertDto>>("/price-alerts", { method: "POST", json: input })).data,
+  update: async (id: string, input: UpdatePriceAlertInput) =>
+    (await api<ApiResponse<PriceAlertDto>>(`/price-alerts/${id}`, { method: "PATCH", json: input }))
+      .data,
+  remove: (id: string) => api<void>(`/price-alerts/${id}`, { method: "DELETE" }),
+};

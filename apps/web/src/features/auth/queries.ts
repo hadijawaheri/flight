@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 
 import { authApi } from "./api";
 
@@ -11,9 +11,5 @@ export function useVerifyOtp() {
 }
 
 export function useLogout() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: authApi.logout,
-    onSuccess: () => queryClient.clear(),
-  });
+  return useMutation({ mutationFn: authApi.logout });
 }

@@ -1,66 +1,49 @@
 import type {
   ApiResponse,
+  AssignSeatsInput,
   BookingDto,
-  CreateBookingInput,
-  PaymentInitiateResponseDto,
-  PaymentReceiptDto,
-  UpdateBookingInput,
+  BookingListItemDto,
+  PageMeta,
+  PaginatedResponse,
+  PayBookingResultDto,
+  PaymentConfigDto,
+  RefundQuoteDto,
 } from "@flysmart/contracts";
+import type { CreateBookingInput, PayBookingInput } from "@flysmart/contracts";
 
 import { api } from "@/lib/api/client";
 
-export async function listBookingsApi(): Promise<BookingDto[]> {
-  const res = await api<ApiResponse<BookingDto[]>>("/bookings");
-  return res.data;
+export interface BookingListParams {
+  page: number;
+  limit: number;
+  when?: "upcoming" | "past";
 }
 
-export async function getBookingByIdApi(id: string): Promise<BookingDto> {
-  const res = await api<ApiResponse<BookingDto>>(`/bookings/${id}`);
-  return res.data;
-}
-
-export async function createBookingApi(input: CreateBookingInput): Promise<BookingDto> {
-  const res = await api<ApiResponse<BookingDto>>("/bookings", {
-    method: "POST",
-    json: input,
-  });
-  return res.data;
-}
-
-export async function updateBookingApi(id: string, input: UpdateBookingInput): Promise<BookingDto> {
-  const res = await api<ApiResponse<BookingDto>>(`/bookings/${id}`, {
-    method: "PATCH",
-    json: input,
-  });
-  return res.data;
-}
-
-export async function cancelBookingApi(id: string): Promise<BookingDto> {
-  const res = await api<ApiResponse<BookingDto>>(`/bookings/${id}/cancel`, {
-    method: "POST",
-  });
-  return res.data;
-}
-
-export async function initiatePaymentApi(
-  bookingId: string,
-  callbackUrl: string,
-): Promise<PaymentInitiateResponseDto> {
-  const res = await api<ApiResponse<PaymentInitiateResponseDto>>("/payments/initiate", {
-    method: "POST",
-    json: { bookingId, callbackUrl },
-  });
-  return res.data;
-}
-
-export async function verifyPaymentApi(
-  authority: string,
-  status: string,
-  bookingId: string,
-): Promise<PaymentReceiptDto> {
-  const res = await api<ApiResponse<PaymentReceiptDto>>("/payments/verify", {
-    method: "POST",
-    json: { authority, status, bookingId },
-  });
-  return res.data;
-}
+export const bookingsApi = {
+  list: async (
+    params: BookingListParams,
+  ): Promise<{ items: BookingListItemDto[]; meta: PageMeta }> => {
+    const search = new URLSearchParams({ page: String(params.page), limit: String(params.limit) });
+    if (params.when) search.set("when", params.when);
+    const res = await api<PaginatedResponse<BookingListItemDto>>(`/bookings?${search.toString()}`);
+    return { items: res.data, meta: res.meta };
+  },
+  get: async (id: string) => (await api<ApiResponse<BookingDto>>(`/bookings/${id}`)).data,
+  create: async (input: CreateBookingInput) =>
+    (await api<ApiResponse<BookingDto>>("/bookings", { method: "POST", json: input })).data,
+  assignSeats: async (id: string, input: AssignSeatsInput) =>
+    (await api<ApiResponse<BookingDto>>(`/bookings/${id}/seats`, { method: "PATCH", json: input }))
+      .data,
+  pay: async (id: string, input: PayBookingInput) =>
+    (
+      await api<ApiResponse<PayBookingResultDto>>(`/bookings/${id}/pay`, {
+        method: "POST",
+        json: input,
+      })
+    ).data,
+  refundQuote: async (id: string) =>
+    (await api<ApiResponse<RefundQuoteDto>>(`/bookings/${id}/refund-quote`)).data,
+  cancel: async (id: string) =>
+    (await api<ApiResponse<BookingDto>>(`/bookings/${id}/cancel`, { method: "POST" })).data,
+  paymentConfig: async () => (await api<ApiResponse<PaymentConfigDto>>("/payments/config")).data,
+};
