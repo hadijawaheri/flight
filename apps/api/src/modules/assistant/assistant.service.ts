@@ -228,9 +228,14 @@ export class AssistantService {
       title: entry.title,
       reliability: entry.reliability,
     }));
-    const suggestions = [
-      ...new Set(entries.flatMap((entry) => FOLLOW_UPS[entry.category] ?? [])),
-    ].slice(0, 3);
+    // A follow-up that would retrieve an entry we just cited only repeats the answer (the live site
+    // answered the Istanbul documents question and then suggested "what documents for abroad?")
+    const suggestions = [...new Set(entries.flatMap((entry) => FOLLOW_UPS[entry.category] ?? []))]
+      .filter((suggestion) => {
+        const top = this.knowledge.search(suggestion, 1)[0]?.entry.id;
+        return top === undefined || !collected.citationIds.has(top);
+      })
+      .slice(0, 3);
 
     return {
       answer,

@@ -1,4 +1,7 @@
-import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { createRequire } from "node:module";
+
+const apiRequire = createRequire(new URL("../apps/api/package.json", import.meta.url));
+const { MongoMemoryReplSet } = apiRequire("mongodb-memory-server");
 
 console.log("Starting embedded local MongoDB replica set for development...");
 try {
