@@ -50,5 +50,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm --filter @skeleton/web exec playwright install --with-deps chromium
-      - run: pnpm --filter @skeleton/web test:e2e
+      - run: pnpm --filter @flysmart/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @flysmart/web test:e2e

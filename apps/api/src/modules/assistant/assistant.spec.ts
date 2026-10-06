@@ -192,6 +192,13 @@ describe("assistant (offline mode)", () => {
     expect(answer.citations).toEqual([]);
   });
 
+  it("never suggests a follow-up that would only repeat the answer just given", async () => {
+    const answer = await ask(offline, "برای سفر به استانبول چه مدارکی لازم است؟");
+    expect(answer.citations.map((citation) => citation.id)).toContain("docs-international");
+    expect(answer.suggestions).not.toContain("برای پرواز خارجی چه مدارکی لازم است؟");
+    expect(answer.suggestions.length).toBeGreaterThan(0);
+  });
+
   it("greets and offers starters", async () => {
     const answer = await ask(offline, "سلام");
     expect(answer.suggestions.length).toBeGreaterThan(0);
