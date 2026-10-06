@@ -1,7 +1,7 @@
+import type { ErrorCode } from "@flysmart/contracts";
 import { Types } from "mongoose";
 
 import { AppException } from "../app-exception.js";
-import type { ErrorCode } from "@flysmart/contracts";
 
 /** Turns a path parameter into an ObjectId, answering 404 (not 500) for malformed values. */
 export function parseObjectId(

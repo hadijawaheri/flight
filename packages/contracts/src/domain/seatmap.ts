@@ -1,5 +1,5 @@
-import { type AircraftType, requireAircraft } from "../reference/aircraft";
 import { seededRandom } from "../common/seeded";
+import { type AircraftType, requireAircraft } from "../reference/aircraft";
 
 export const CABINS = ["ECONOMY", "BUSINESS"] as const;
 export type Cabin = (typeof CABINS)[number];

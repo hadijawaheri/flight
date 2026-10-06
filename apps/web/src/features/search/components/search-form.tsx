@@ -1,7 +1,7 @@
 "use client";
 
-import { addDaysIso, searchFlightsQuerySchema } from "@flysmart/contracts";
 import type { Cabin } from "@flysmart/contracts";
+import { addDaysIso, searchFlightsQuerySchema } from "@flysmart/contracts";
 import { ArrowLeftRightIcon, PlaneTakeoffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";

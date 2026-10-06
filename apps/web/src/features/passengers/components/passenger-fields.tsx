@@ -1,8 +1,8 @@
 "use client";
 
 import type { PassengerIdentity } from "@flysmart/contracts";
-import { Controller } from "react-hook-form";
 import type { Control, FieldValues, Path } from "react-hook-form";
+import { Controller } from "react-hook-form";
 
 import { JalaliDateFields } from "@/components/shared/jalali-date-fields";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";

@@ -6,18 +6,18 @@ import type {
   RefundResult,
 } from "@flysmart/contracts";
 import {
+  type BatteryVerdict,
   calculateExcessBaggage,
   calculateRefund,
-  EXCESS_BAGGAGE_RATE_PERCENT,
   evaluateBattery,
-  formatToman,
-  refundPolicyFor,
-  tomanToRial,
-  wattHoursFromMah,
-  type BatteryVerdict,
+  EXCESS_BAGGAGE_RATE_PERCENT,
   type FareFamily,
   type FlightType,
+  formatToman,
+  refundPolicyFor,
   type RefundReason,
+  tomanToRial,
+  wattHoursFromMah,
 } from "@flysmart/contracts";
 
 /** Pure calculators behind the assistant's tools. Each returns a card the UI renders as-is. */

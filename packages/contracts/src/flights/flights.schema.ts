@@ -8,9 +8,9 @@ import {
   validatePassengerMix,
 } from "../domain/fare";
 import type { FareFamily, RefundPolicy } from "../domain/refund";
-import { CABINS, type Cabin } from "../domain/seatmap";
-import type { PriceInsightSummary } from "../pricing/summary";
+import { type Cabin, CABINS } from "../domain/seatmap";
 import type { PriceInsight, PricePoint } from "../pricing/price-insight";
+import type { PriceInsightSummary } from "../pricing/summary";
 import { isKnownLocationCode } from "../reference/airports";
 
 export const FLIGHT_SORTS = ["best", "price", "departure", "duration"] as const;

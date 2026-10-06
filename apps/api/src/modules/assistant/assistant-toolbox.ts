@@ -1,4 +1,3 @@
-import { Injectable } from "@nestjs/common";
 import type { AssistantCardDto, AssistantTool } from "@flysmart/contracts";
 import {
   CABINS,
@@ -12,6 +11,7 @@ import {
   searchFlightsQuerySchema,
   tomanToRial,
 } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
 import { z } from "zod";
 
 import { AppException } from "../../common/app-exception.js";

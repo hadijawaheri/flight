@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
 import type { DealDto, ExploreDestinationDto, ExploreResultDto } from "@flysmart/contracts";
 import { addDaysIso, AIRPORTS, expandAirportCode, getAirport, getRoute } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
 
 import { Clock } from "../../common/clock/clock.js";
 import { TtlCache } from "../../common/ttl-cache.js";

@@ -5,8 +5,8 @@ import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
 import { ResultsView } from "@/features/flights";
-import { parseTripQuery, SearchForm } from "@/features/search";
 import type { RawParams } from "@/features/search";
+import { parseTripQuery, SearchForm } from "@/features/search";
 import { tehranToday } from "@/lib/format";
 import { privatePage } from "@/lib/seo";
 

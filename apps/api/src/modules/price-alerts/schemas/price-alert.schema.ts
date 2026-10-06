@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { Cabin, PriceAlertStatus } from "@flysmart/contracts";
 import { CABINS, PRICE_ALERT_STATUSES } from "@flysmart/contracts";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
 import { Types } from "mongoose";
 

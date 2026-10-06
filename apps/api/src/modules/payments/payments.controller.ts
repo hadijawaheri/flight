@@ -1,5 +1,5 @@
-import { Controller, Get } from "@nestjs/common";
 import type { ApiResponse, PaymentConfigDto } from "@flysmart/contracts";
+import { Controller, Get } from "@nestjs/common";
 
 import { Public } from "../../common/decorators/public.decorator.js";
 import { PaymentsService } from "./payments.service.js";

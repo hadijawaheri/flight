@@ -1,5 +1,5 @@
 import { roundRial } from "../common/money";
-import { distanceKm, getAirport, type Airport } from "./airports";
+import { type Airport, distanceKm, getAirport } from "./airports";
 
 /**
  * Route network of the simulated market. Hub-and-spoke with Tehran Mehrabad as the domestic hub

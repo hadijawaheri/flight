@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { Gender } from "@flysmart/contracts";
 import { GENDERS } from "@flysmart/contracts";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
 import { Types } from "mongoose";
 

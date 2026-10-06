@@ -1,7 +1,7 @@
 import {
   addDaysIso,
-  type Cabin,
   buildFlightId,
+  type Cabin,
   demandForDate,
   type DemandInfo,
   diffDaysIso,

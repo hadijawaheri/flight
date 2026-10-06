@@ -1,10 +1,9 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import type { RequestOtpInput } from "@flysmart/contracts";
 import { normalizeDigits, requestOtpSchema } from "@flysmart/contracts";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeftIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -55,7 +54,9 @@ function MobileStep({ onSent }: { onSent: (mobile: string) => void }) {
     <form onSubmit={onSubmit} noValidate>
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">ورود یا ثبت‌نام</CardTitle>
+          <CardTitle className="text-xl">
+            <h1>ورود یا ثبت‌نام</h1>
+          </CardTitle>
           <CardDescription>
             برای رزرو و دیدن سفرهایتان، شماره موبایل خود را وارد کنید.
           </CardDescription>
@@ -105,15 +106,16 @@ function CodeStep({
   next: string | undefined;
   onBack: () => void;
 }) {
-  const router = useRouter();
   const [code, setCode] = useState("");
   const verify = useVerifyOtp();
 
   async function submit(value: string) {
     try {
       await verify.mutateAsync({ mobile, code: value });
-      router.replace(safeRedirect(next));
-      router.refresh();
+      // A full navigation: router.replace + router.refresh raced, and the refresh re-ran the proxy on
+      // /sign-in (now signed in) which bounced to /dashboard and dropped ?next=. It also clears
+      // every client cache that was filled while signed out.
+      window.location.replace(safeRedirect(next));
     } catch (error) {
       setCode("");
       toast.error(getErrorMessage(error));
@@ -130,7 +132,9 @@ function CodeStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">کد تأیید را وارد کنید</CardTitle>
+        <CardTitle className="text-xl">
+          <h1>کد تأیید را وارد کنید</h1>
+        </CardTitle>
         <CardDescription>
           کد ۶ رقمی به شماره <bdi dir="ltr">{mobile}</bdi> پیامک شد.
         </CardDescription>

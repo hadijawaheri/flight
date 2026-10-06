@@ -52,7 +52,6 @@ export function SeatMap({
     Object.entries(assignments).map(([index, seat]) => [seat, Number(index)]),
   );
   const labelOf = new Map(passengers.map((passenger) => [passenger.index, passenger.label]));
-  let lastCabin: string | null = null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -68,9 +67,9 @@ export function SeatMap({
       </ul>
 
       <div className="bg-muted/40 mx-auto flex w-fit max-w-full flex-col gap-1.5 overflow-x-auto rounded-t-[4rem] rounded-b-xl border px-5 pt-10 pb-5">
-        {map.rows.map((row) => {
-          const cabinHeader = row.cabin !== lastCabin;
-          lastCabin = row.cabin;
+        {map.rows.map((row, rowIndex) => {
+          // Compared with the previous row instead of a mutable variable, which React forbids during render
+          const cabinHeader = row.cabin !== map.rows[rowIndex - 1]?.cabin;
           return (
             <Fragment key={row.row}>
               {cabinHeader && (

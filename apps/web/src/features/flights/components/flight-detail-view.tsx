@@ -11,8 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { mixOf, tripSearchParams } from "@/features/search";
 import type { TripQuery } from "@/features/search";
+import { mixOf, tripSearchParams } from "@/features/search";
 import {
   dateOfLocalTime,
   formatClock,

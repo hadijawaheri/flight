@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-import { type FlightSearchParams, flightsApi } from "./api";
+import { flightsApi, type FlightSearchParams } from "./api";
 
 export const flightKeys = {
   all: ["flights"] as const,

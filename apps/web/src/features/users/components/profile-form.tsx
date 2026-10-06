@@ -1,8 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { updateProfileSchema } from "@flysmart/contracts";
 import type { UpdateProfileInput, UserDto } from "@flysmart/contracts";
+import { updateProfileSchema } from "@flysmart/contracts";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";

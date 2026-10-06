@@ -1,4 +1,3 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type {
   BookingStatus,
   Cabin,
@@ -10,6 +9,7 @@ import type {
   SliceDirection,
 } from "@flysmart/contracts";
 import { BOOKING_STATUSES, CABINS, GENDERS, SLICE_DIRECTIONS } from "@flysmart/contracts";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
 import { Types } from "mongoose";
 

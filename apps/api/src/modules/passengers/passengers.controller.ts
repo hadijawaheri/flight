@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 import type { ApiResponse, PassengerDto } from "@flysmart/contracts";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 
 import { CurrentUser } from "../../common/decorators/current-user.decorator.js";
 import type { AuthUser } from "../../common/types/auth.js";

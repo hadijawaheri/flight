@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
 import {
   addDaysIso,
   type Cabin,
   diffDaysIso,
   expandAirportCode,
-  type PricePoint,
   parseFlightId,
+  type PricePoint,
 } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
 
 import { Clock } from "../../common/clock/clock.js";
 import type { FlightRecord, FlightSearchParams } from "./flight.provider.js";

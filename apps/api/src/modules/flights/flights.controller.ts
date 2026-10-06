@@ -1,4 +1,3 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
 import type {
   ApiResponse,
   FareCalendarDto,
@@ -7,6 +6,7 @@ import type {
   PriceAnalysisDto,
   SeatMapDto,
 } from "@flysmart/contracts";
+import { Controller, Get, Param, Query } from "@nestjs/common";
 
 import { Public } from "../../common/decorators/public.decorator.js";
 import {

@@ -2,12 +2,12 @@ import { z } from "zod";
 
 import { mobileSchema } from "../common/iran";
 import type { FareBreakdown, PassengerType } from "../domain/fare";
-import type { PaymentDto } from "../payments/payments.schema";
 import type { RefundPolicy, RefundResult } from "../domain/refund";
 import { parseSeatNumber } from "../domain/seatmap";
 import { flightIdSchema } from "../flights/flight-id";
 import type { FlightSummaryDto } from "../flights/flights.schema";
 import { passengerIdentitySchema } from "../passengers/passengers.schema";
+import type { PaymentDto } from "../payments/payments.schema";
 
 export const BOOKING_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED", "EXPIRED"] as const;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];

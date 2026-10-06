@@ -1,4 +1,3 @@
-import { Injectable } from "@nestjs/common";
 import type {
   AirlineFacetDto,
   Cabin,
@@ -20,6 +19,7 @@ import {
   isFlightId,
   summarizeInsight,
 } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
 
 import { AppException } from "../../common/app-exception.js";
 import { Clock } from "../../common/clock/clock.js";

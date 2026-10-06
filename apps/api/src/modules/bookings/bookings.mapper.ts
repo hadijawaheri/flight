@@ -2,8 +2,8 @@ import type {
   BookingDto,
   BookingListItemDto,
   BookingPassengerDto,
-  BookingStatus,
   BookingSliceDto,
+  BookingStatus,
 } from "@flysmart/contracts";
 import { maskNationalCode } from "@flysmart/contracts";
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isoDateSchema } from "../common/dates";
+import { isoDateSchema, toIsoDate } from "../common/dates";
 import { nationalCodeSchema } from "../common/iran";
 
 export const GENDERS = ["MALE", "FEMALE"] as const;
@@ -24,6 +24,18 @@ const passportNumber = z
   .regex(/^[A-Za-z0-9]{6,12}$/, "شماره گذرنامه نامعتبر است")
   .transform((value) => value.toUpperCase());
 
+const OLDEST_TRAVELLER_YEARS = 120;
+
+// Without bounds a typo like 1700 or 2030 passes the shape check and only fails later with an
+// unrelated "an adult is required" message
+const birthDateSchema = isoDateSchema
+  .refine((value) => value <= toIsoDate(new Date()), "تاریخ تولد نمی‌تواند در آینده باشد")
+  .refine((value) => {
+    const limit = new Date();
+    limit.setUTCFullYear(limit.getUTCFullYear() - OLDEST_TRAVELLER_YEARS);
+    return value >= toIsoDate(limit);
+  }, "تاریخ تولد معتبر نیست");
+
 /** Identity fields shared by the traveler vault and booking forms. */
 export const passengerIdentitySchema = z.object({
   firstNameFa: persianName("نام فارسی"),
@@ -31,7 +43,7 @@ export const passengerIdentitySchema = z.object({
   firstNameEn: latinName("نام انگلیسی"),
   lastNameEn: latinName("نام خانوادگی انگلیسی"),
   nationalId: nationalCodeSchema,
-  birthDate: isoDateSchema,
+  birthDate: birthDateSchema,
   gender: z.enum(GENDERS, { error: "جنسیت باید مشخص شود" }),
   passportNumber: passportNumber.nullable().optional(),
   passportExpiry: isoDateSchema.nullable().optional(),

@@ -1,6 +1,6 @@
+import type { PassengerDto } from "@flysmart/contracts";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import type { PassengerDto } from "@flysmart/contracts";
 import { Model, Types } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";

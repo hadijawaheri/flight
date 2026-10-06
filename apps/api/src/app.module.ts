@@ -8,10 +8,10 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { LoggerModule } from "nestjs-pino";
 
+import { ClockModule } from "./common/clock/clock.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
 import { RolesGuard } from "./common/guards/roles.guard.js";
-import { ClockModule } from "./common/clock/clock.module.js";
 import { ZodValidationPipe } from "./common/zod/zod-validation.pipe.js";
 import type { Env } from "./config/env.js";
 import { validateEnv } from "./config/env.js";

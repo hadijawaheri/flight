@@ -1,5 +1,5 @@
-import { Controller, Get, Query } from "@nestjs/common";
 import type { ApiResponse, DealDto, ExploreResultDto } from "@flysmart/contracts";
+import { Controller, Get, Query } from "@nestjs/common";
 
 import { Public } from "../../common/decorators/public.decorator.js";
 import { DealsService } from "./deals.service.js";

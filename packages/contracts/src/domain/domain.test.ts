@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { requireAircraft } from "../reference/aircraft";
 import { calculateExcessBaggage } from "./baggage";
 import { evaluateBattery, wattHoursFromMah } from "./batteries";
 import {
@@ -12,7 +13,6 @@ import {
 } from "./fare";
 import { calculateRefund, refundPolicyFor } from "./refund";
 import { autoAssignSeats, buildSeatMap, findSeat, parseSeatNumber, seatExists } from "./seatmap";
-import { requireAircraft } from "../reference/aircraft";
 
 describe("passenger mix", () => {
   it("requires an adult and one adult per infant", () => {

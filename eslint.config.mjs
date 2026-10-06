@@ -35,6 +35,11 @@ export default tseslint.config(
     files: ["apps/api/**/*.ts", "packages/**/*.ts", "scripts/**/*.mjs", "*.mjs"],
     languageOptions: { globals: globals.node },
   },
+  // Cloudflare Worker runs in a service-worker runtime (fetch, Request, URL), not Node
+  {
+    files: ["infra/**/*.js"],
+    languageOptions: { globals: globals.serviceworker },
+  },
   // CommonJS config files (PM2 reads ecosystem.config.cjs)
   {
     files: ["**/*.cjs"],

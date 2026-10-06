@@ -1,10 +1,10 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
 import type {
   AirportGuideDto,
   ApiResponse,
   RuleEntryDto,
   RulesIndexDto,
 } from "@flysmart/contracts";
+import { Controller, Get, Param, Query } from "@nestjs/common";
 
 import { Public } from "../../common/decorators/public.decorator.js";
 import { ListRulesQueryDto } from "./dto/rules.dto.js";

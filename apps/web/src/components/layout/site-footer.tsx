@@ -2,8 +2,8 @@ import Link from "next/link";
 
 import { Logo } from "@/components/shared/logo";
 import { Separator } from "@/components/ui/separator";
-import { SITE_NAME } from "@/lib/seo";
 import { paths } from "@/lib/paths";
+import { SITE_NAME } from "@/lib/seo";
 
 export function SiteFooter() {
   return (

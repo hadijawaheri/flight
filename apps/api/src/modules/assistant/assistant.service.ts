@@ -1,4 +1,3 @@
-import { Injectable, Logger } from "@nestjs/common";
 import type {
   AskAssistantInput,
   AssistantAnswerDto,
@@ -7,19 +6,20 @@ import type {
   AssistantStatusDto,
   RuleCategory,
 } from "@flysmart/contracts";
+import { Injectable, Logger } from "@nestjs/common";
 
 import { Clock } from "../../common/clock/clock.js";
 import type { LlmContentBlock, LlmMessage } from "../../infra/ai/llm.provider.js";
 import { LlmError, LlmProvider } from "../../infra/ai/llm.provider.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
-import type { ToolContext, ToolOutcome } from "./assistant-toolbox.js";
-import { AssistantToolbox, LLM_TOOLS } from "./assistant-toolbox.js";
 import {
   buildSystemPrompt,
   NOT_FOUND_ANSWER,
   STARTER_QUESTIONS,
   VERIFY_NOTICE,
 } from "./assistant.prompt.js";
+import type { ToolContext, ToolOutcome } from "./assistant-toolbox.js";
+import { AssistantToolbox, LLM_TOOLS } from "./assistant-toolbox.js";
 import { cardLead } from "./offline-answerer.js";
 import { planOfflineCalls } from "./offline-answerer.js";
 

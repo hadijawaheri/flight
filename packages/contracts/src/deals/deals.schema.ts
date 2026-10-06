@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { isoDateSchema } from "../common/dates";
-import { type PriceVerdict } from "../pricing/price-insight";
 import type { AirlineRefDto } from "../flights/flights.schema";
 import { locationCodeSchema } from "../flights/flights.schema";
+import { type PriceVerdict } from "../pricing/price-insight";
 
 export const flashDealsQuerySchema = z.object({
   origin: locationCodeSchema.default("THR"),

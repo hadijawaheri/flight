@@ -1,5 +1,3 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
 import type { Cabin, PriceAlertDto } from "@flysmart/contracts";
 import {
   diffDaysIso,
@@ -9,13 +7,15 @@ import {
   locationLabel,
   MAX_ACTIVE_ALERTS,
 } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";
 import { Clock } from "../../common/clock/clock.js";
 import { parseObjectId } from "../../common/database/object-id.js";
-import { SmsProvider } from "../../infra/sms/sms.provider.js";
 import { SALES_HORIZON_DAYS } from "../../infra/flight/simulation/pricing-model.js";
+import { SmsProvider } from "../../infra/sms/sms.provider.js";
 import { FlightsService } from "../flights/flights.service.js";
 import { UsersService } from "../users/users.service.js";
 import type { CreatePriceAlertDto, UpdatePriceAlertDto } from "./dto/price-alerts.dto.js";

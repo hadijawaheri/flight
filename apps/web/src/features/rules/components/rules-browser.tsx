@@ -93,13 +93,17 @@ export function RulesBrowser({ index, category, q }: RulesBrowserProps) {
           </Button>
         </Empty>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
-          {index.entries.map((rule) => (
-            <li key={rule.id}>
-              <RuleCard rule={rule} />
-            </li>
-          ))}
-        </ul>
+        <>
+          {/* The cards are h3; without an h2 the heading outline jumps from h1 to h3 */}
+          <h2 className="sr-only">فهرست قوانین</h2>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            {index.entries.map((rule) => (
+              <li key={rule.id}>
+                <RuleCard rule={rule} />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

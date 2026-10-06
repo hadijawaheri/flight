@@ -1,10 +1,11 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { createPriceAlertSchema, tomanToRial } from "@flysmart/contracts";
 import type { Cabin } from "@flysmart/contracts";
+import { createPriceAlertSchema, tomanToRial } from "@flysmart/contracts";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { BellPlusIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -39,6 +40,7 @@ export function PriceAlertForm({
   suggested,
 }: PriceAlertFormProps) {
   const create = useCreatePriceAlert();
+  const router = useRouter();
   const start = suggested ?? Math.round((currentPrice * 0.9) / 100_000) * 100_000;
   const form = useForm<TargetFormInput, unknown, TargetFormOutput>({
     resolver: zodResolver(targetFormSchema),
@@ -74,8 +76,8 @@ export function PriceAlertForm({
           action: {
             label: "ورود",
             onClick: () =>
-              location.assign(
-                `${paths.signIn}?next=${encodeURIComponent(location.pathname + location.search)}`,
+              router.push(
+                `${paths.signIn}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`,
               ),
           },
         });

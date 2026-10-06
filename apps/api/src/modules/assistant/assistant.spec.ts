@@ -8,9 +8,9 @@ import { NullLlmProvider } from "../../infra/ai/null-llm.provider.js";
 import { BookingsService } from "../bookings/bookings.service.js";
 import { FlightsService } from "../flights/flights.service.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
-import { AssistantToolbox } from "./assistant-toolbox.js";
 import { NOT_FOUND_ANSWER } from "./assistant.prompt.js";
 import { AssistantService } from "./assistant.service.js";
+import { AssistantToolbox } from "./assistant-toolbox.js";
 import { batteryCard, bookingRefundCard, excessBaggageCard, genericRefundCard } from "./cards.js";
 import { planOfflineCalls } from "./offline-answerer.js";
 

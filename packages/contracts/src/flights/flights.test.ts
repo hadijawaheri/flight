@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
+import { askAssistantSchema } from "../assistant/assistant.schema";
+import { assignSeatsSchema, createBookingSchema } from "../bookings/bookings.schema";
+import { mobileSchema, nationalCodeSchema } from "../common/iran";
+import { createPassengerSchema, updatePassengerSchema } from "../passengers/passengers.schema";
+import { createPriceAlertSchema } from "../price-alerts/price-alerts.schema";
 import { buildFlightId, isFlightId, parseFlightId } from "./flight-id";
 import {
   fareCalendarQuerySchema,
   flightQuoteQuerySchema,
   searchFlightsQuerySchema,
 } from "./flights.schema";
-import { createBookingSchema, assignSeatsSchema } from "../bookings/bookings.schema";
-import { createPriceAlertSchema } from "../price-alerts/price-alerts.schema";
-import { askAssistantSchema } from "../assistant/assistant.schema";
-import { createPassengerSchema, updatePassengerSchema } from "../passengers/passengers.schema";
-import { mobileSchema, nationalCodeSchema } from "../common/iran";
 
 describe("flight id", () => {
   it("round-trips", () => {

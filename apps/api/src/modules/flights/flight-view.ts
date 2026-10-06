@@ -1,20 +1,20 @@
 import {
   addDaysIso,
+  type Airport,
   buildFareBreakdown,
+  businessSeats,
   type Cabin,
   demandForDate,
+  diffDaysIso,
+  economySeats,
   type FareBreakdown,
   type FlightPointDto,
   type FlightSummaryDto,
   hoursBetween,
   type PassengerType,
-  refundPolicyFor,
   type RefundPolicy,
-  economySeats,
-  businessSeats,
+  refundPolicyFor,
   utcToLocalString,
-  type Airport,
-  diffDaysIso,
 } from "@flysmart/contracts";
 
 import type { FlightRecord } from "../../infra/flight/flight.provider.js";

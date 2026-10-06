@@ -6,9 +6,9 @@ import {
   adultPassenger,
   createTestApp,
   firstOffer,
+  type FoundOffer,
   futureDate,
   signedInAgent,
-  type FoundOffer,
 } from "./helpers.js";
 
 describe("booking flow (e2e)", () => {

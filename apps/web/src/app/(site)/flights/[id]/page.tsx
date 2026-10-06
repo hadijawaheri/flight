@@ -9,8 +9,8 @@ import { notFound } from "next/navigation";
 
 import { PageContainer } from "@/components/layout/page-container";
 import { FlightDetailView } from "@/features/flights";
-import { parseTripQuery } from "@/features/search";
 import type { RawParams } from "@/features/search";
+import { parseTripQuery } from "@/features/search";
 import { privatePage } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ id: string }>; searchParams: Promise<RawParams> };

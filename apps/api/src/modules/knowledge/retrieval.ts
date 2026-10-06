@@ -65,6 +65,9 @@ const STOPWORDS = new Set([
 function stem(token: string): string {
   if (token.length > 4 && token.endsWith("های")) return token.slice(0, -3);
   if (token.length > 3 && token.endsWith("ها")) return token.slice(0, -2);
+  // "مدارکی"/"ویزای" (indefinite and ezafe ی) must meet "مدارک"/"ویزا"; applied to both sides so
+  // words that naturally end in ی ("خارجی") still match each other
+  if (token.length > 4 && token.endsWith("ی")) return token.slice(0, -1);
   return token;
 }
 

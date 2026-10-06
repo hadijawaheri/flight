@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { isoDateSchema } from "../common/dates";
-import { CABINS, type Cabin } from "../domain/seatmap";
+import { type Cabin, CABINS } from "../domain/seatmap";
 import { locationCodeSchema } from "../flights/flights.schema";
 
 export const PRICE_ALERT_STATUSES = ["ACTIVE", "TRIGGERED", "EXPIRED"] as const;

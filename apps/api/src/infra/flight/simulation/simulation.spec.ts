@@ -1,10 +1,10 @@
 import {
   addDaysIso,
+  AIRPORTS,
   buildFlightId,
   diffDaysIso,
   getRoute,
   parseFlightId,
-  AIRPORTS,
 } from "@flysmart/contracts";
 import { describe, expect, it } from "vitest";
 

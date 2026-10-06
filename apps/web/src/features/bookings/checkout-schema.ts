@@ -1,3 +1,4 @@
+import type { PassengerType } from "@flysmart/contracts";
 import {
   addDaysIso,
   bookingContactSchema,
@@ -5,7 +6,6 @@ import {
   passengerTypeForAge,
   SEAT_PREFERENCES,
 } from "@flysmart/contracts";
-import type { PassengerType } from "@flysmart/contracts";
 import { z } from "zod";
 
 export interface CheckoutRules {

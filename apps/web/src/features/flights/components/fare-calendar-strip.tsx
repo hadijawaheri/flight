@@ -1,7 +1,7 @@
 "use client";
 
-import { addDaysIso } from "@flysmart/contracts";
 import type { Cabin } from "@flysmart/contracts";
+import { addDaysIso } from "@flysmart/contracts";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";

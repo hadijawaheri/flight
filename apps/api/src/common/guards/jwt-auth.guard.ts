@@ -1,9 +1,9 @@
+import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
-import { COOKIE_NAMES } from "@flysmart/contracts";
 
 import type { Env } from "../../config/env.js";
 import { IS_PUBLIC } from "../decorators/public.decorator.js";

@@ -1,8 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { createPassengerSchema, maskNationalCode } from "@flysmart/contracts";
 import type { PassengerDto } from "@flysmart/contracts";
+import { createPassengerSchema, maskNationalCode } from "@flysmart/contracts";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { PencilIcon, PlusIcon, StarIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";

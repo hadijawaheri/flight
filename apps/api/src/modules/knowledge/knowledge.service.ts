@@ -1,4 +1,3 @@
-import { Injectable } from "@nestjs/common";
 import type {
   AirportGuideDto,
   ListRulesQuery,
@@ -7,6 +6,7 @@ import type {
   RulesIndexDto,
 } from "@flysmart/contracts";
 import { getAirport, RULE_CATEGORIES, RULE_CATEGORY_LABELS } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
 
 import { AppException } from "../../common/app-exception.js";
 import { KNOWLEDGE_ENTRIES } from "./entries/index.js";

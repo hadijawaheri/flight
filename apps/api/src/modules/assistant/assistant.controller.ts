@@ -1,6 +1,6 @@
+import type { ApiResponse, AssistantAnswerDto, AssistantStatusDto } from "@flysmart/contracts";
 import { Body, Controller, Get, HttpCode, Post } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
-import type { ApiResponse, AssistantAnswerDto, AssistantStatusDto } from "@flysmart/contracts";
 
 import { OptionalUser } from "../../common/decorators/current-user.decorator.js";
 import { Public } from "../../common/decorators/public.decorator.js";

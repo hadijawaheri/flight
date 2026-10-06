@@ -45,6 +45,10 @@ describe("tokenize", () => {
   it("drops stopwords and unifies Arabic letters and plurals", () => {
     expect(tokenize("چمدان‌ها و كيف")).toEqual(["چمدان", "کیف"]);
   });
+
+  it("strips the indefinite and ezafe ی so مدارکی meets مدارک", () => {
+    expect(tokenize("مدارکی ویزای")).toEqual(["مدارک", "ویزا"]);
+  });
 });
 
 describe("retrieval", () => {
@@ -63,6 +67,12 @@ describe("retrieval", () => {
     ["مهلت پرداخت رزرو", "platform-booking-hold"],
     ["تحلیل قیمت چطور کار میکنه", "platform-price-analysis"],
     ["سفر با سگ", "pets-travel"],
+    // Found by browsing the live site: these used to land on the domestic-documents entry
+    ["برای سفر به استانبول چه مدارکی لازم است؟", "docs-international"],
+    ["برای سفر خارجی چه مدارکی لازم دارم", "docs-international"],
+    ["ویزای ترکیه لازم است؟", "docs-international"],
+    ["گذرنامه‌ام ۴ ماه اعتبار دارد می‌توانم به دبی بروم", "docs-international"],
+    ["با بچه ۳ ساله به مشهد چه مدارکی؟", "docs-minors"],
   ])("answers %s from %s", (query, expected) => {
     expect(top(query)).toBe(expected);
   });

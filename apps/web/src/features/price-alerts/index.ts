@@ -1,4 +1,5 @@
 export { PriceAlertForm } from "./components/price-alert-form";
+export { PriceAlertsManager } from "./components/price-alerts-manager";
 export {
   priceAlertKeys,
   useCreatePriceAlert,
@@ -6,4 +7,3 @@ export {
   usePriceAlerts,
   useUpdatePriceAlert,
 } from "./queries";
-export { PriceAlertsManager } from "./components/price-alerts-manager";

@@ -75,7 +75,9 @@ export function PriceAnalysisPanel({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">تحلیل قیمت</CardTitle>
+        <CardTitle className="text-lg">
+          <h2>تحلیل قیمت</h2>
+        </CardTitle>
         <CardDescription>
           بر پایه‌ی الگوی قیمت این پرواز در {formatNumber(insight.stats.sampleSize)} روز. این یک
           برآورد است و تضمین قیمت آینده نیست.

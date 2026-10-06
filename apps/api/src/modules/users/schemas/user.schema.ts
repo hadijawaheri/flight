@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { Role } from "@flysmart/contracts";
 import { ROLES } from "@flysmart/contracts";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument, Types } from "mongoose";
 
 import { softDeletePlugin } from "../../../common/database/soft-delete.plugin.js";

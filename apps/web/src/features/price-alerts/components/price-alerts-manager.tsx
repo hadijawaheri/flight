@@ -1,8 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { tomanToRial } from "@flysmart/contracts";
 import type { PriceAlertDto, PriceAlertStatus } from "@flysmart/contracts";
+import { tomanToRial } from "@flysmart/contracts";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { BellIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";

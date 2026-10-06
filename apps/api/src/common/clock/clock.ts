@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
 import { tehranToday } from "@flysmart/contracts";
+import { Injectable } from "@nestjs/common";
 
 /** Single source of "now" so time-dependent rules (holds, alerts, fares) are testable. */
 export abstract class Clock {

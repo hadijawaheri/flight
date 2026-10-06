@@ -1,7 +1,7 @@
 "use client";
 
-import { locationLabel } from "@flysmart/contracts";
 import type { FlightOfferDto, FlightSort } from "@flysmart/contracts";
+import { locationLabel } from "@flysmart/contracts";
 import {
   ArrowLeftIcon,
   CheckCircle2Icon,
@@ -39,9 +39,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatClock, formatLongDate, formatNumber } from "@/lib/format";
-import { legOf, mixOf, SearchForm, tripSearchParams } from "@/features/search";
 import type { TripLeg, TripQuery } from "@/features/search";
+import { legOf, mixOf, SearchForm, tripSearchParams } from "@/features/search";
+import { formatClock, formatLongDate, formatNumber } from "@/lib/format";
 
 import { activeFilterCount, applyFilters } from "../filter-offers";
 import { useOfferFilters } from "../filters";

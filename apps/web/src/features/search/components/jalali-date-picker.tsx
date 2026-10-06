@@ -6,8 +6,8 @@ import {
   JALALI_MONTH_NAMES,
   jalaliMonthDays,
   jalaliMonthStartWeekday,
-  PERSIAN_WEEKDAY_SHORT,
   officialHolidayName,
+  PERSIAN_WEEKDAY_SHORT,
 } from "@flysmart/contracts";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useState } from "react";

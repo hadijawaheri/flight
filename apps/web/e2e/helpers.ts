@@ -19,7 +19,8 @@ export function isoDaysFromNow(days: number): string {
 
 /** Uses the fixed OTP the API accepts when started with OTP_FIXED_CODE=123456 (test environments only). */
 export async function signIn(page: Page, mobile = "09120000000"): Promise<void> {
-  await page.goto("/sign-in");
+  // Keep the ?next= the proxy added when the visitor is already on the sign-in page
+  if (!page.url().includes("/sign-in")) await page.goto("/sign-in");
   await page.getByLabel("شماره موبایل").fill(mobile);
   await page.getByRole("button", { name: "دریافت کد تأیید" }).click();
   await page.locator("#otp-code").fill("123456");

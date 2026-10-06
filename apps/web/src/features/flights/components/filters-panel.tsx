@@ -1,12 +1,12 @@
 "use client";
 
-import { FLIGHT_TYPES, TIME_BUCKETS } from "@flysmart/contracts";
 import type {
   FlightOfferDto,
   FlightSearchResultDto,
   FlightType,
   TimeBucket,
 } from "@flysmart/contracts";
+import { FLIGHT_TYPES, TIME_BUCKETS } from "@flysmart/contracts";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";

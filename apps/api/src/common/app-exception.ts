@@ -1,5 +1,5 @@
-import { HttpException } from "@nestjs/common";
 import type { ErrorCode } from "@flysmart/contracts";
+import { HttpException } from "@nestjs/common";
 
 export class AppException extends HttpException {
   constructor(

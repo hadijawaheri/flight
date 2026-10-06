@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getAircraft, AIRCRAFT, totalSeats } from "./aircraft";
+import { AIRCRAFT, getAircraft, totalSeats } from "./aircraft";
 import { AIRLINES } from "./airlines";
 import {
   AIRPORTS,
