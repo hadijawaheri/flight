@@ -32,15 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: "true"
-      DATABASE_URL: mongodb://127.0.0.1:27017/e2e
+      DATABASE_URL: mongodb://127.0.0.1:27017/flysmart_e2e?replicaSet=rs0&directConnection=true
       JWT_ACCESS_SECRET: ci-access-secret-ci-access-secret-0123456
       OTP_HMAC_SECRET: ci-otp-secret-ci-otp-secret-0123456789
       OTP_FIXED_CODE: "123456"
       THROTTLE_ENABLED: "false"
-    services:
-      mongo:
-        image: mongo:8
-        ports: ["27017:27017"]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -48,6 +44,18 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+      - name: Start MongoDB replica set
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            docker exec mongo mongosh --quiet --eval 'db.runCommand({ping:1}).ok' && break
+            sleep 2
+          done
+          docker exec mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+          for i in $(seq 1 30); do
+            docker exec mongo mongosh --quiet --eval 'db.hello().isWritablePrimary' | grep -q true && break
+            sleep 2
+          done
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm --filter @flysmart/web exec playwright install --with-deps chromium
