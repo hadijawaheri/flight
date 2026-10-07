@@ -1,6 +1,7 @@
 "use client";
 
 import type { BookingDto, BookingPassengerDto, BookingSliceDto } from "@flysmart/contracts";
+import { passengerDisplayName } from "@flysmart/contracts";
 import { MessageCircleQuestionIcon, PrinterIcon } from "lucide-react";
 import Link from "next/link";
 
@@ -204,15 +205,22 @@ function PassengerRow({
     <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="font-semibold">
-          {formatNumber(passenger.index + 1)}. {passenger.firstNameFa} {passenger.lastNameFa}
+          {formatNumber(passenger.index + 1)}. {passengerDisplayName(passenger)}
         </span>
         <span className="text-muted-foreground text-xs">
           {PASSENGER_TYPE_LABELS[passenger.type]}
         </span>
       </div>
       <p className="text-muted-foreground tnum text-xs" dir="ltr">
-        {passenger.firstNameEn} {passenger.lastNameEn} · ID {passenger.nationalIdMasked}
-        {passenger.passportNumberMasked && ` · PP ${passenger.passportNumberMasked}`}
+        {[
+          `${passenger.firstNameEn} ${passenger.lastNameEn}`,
+          passenger.nationalIdMasked && `ID ${passenger.nationalIdMasked}`,
+          // Foreigners have no national code, so the issuing country says whose passport it is
+          passenger.nationalIdMasked === null && passenger.nationality,
+          passenger.passportNumberMasked && `PP ${passenger.passportNumberMasked}`,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
       </p>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs" role="list">
         {booking.slices.map((slice) => (

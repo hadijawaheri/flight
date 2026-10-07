@@ -2,14 +2,16 @@ import fs from "node:fs";
 
 import { Client } from "ssh2";
 
-const host = process.env.SERVER_HOST || "141.11.107.22";
-const port = Number(process.env.SERVER_PORT || 9011);
+// Server details come from the environment so none of them is committed
+const host = process.env.SERVER_HOST;
+if (!host) {
+  console.error("Set SERVER_HOST (and SERVER_PORT, SERVER_USER, SERVER_KEY or SERVER_PASS).");
+  process.exit(1);
+}
+const port = Number(process.env.SERVER_PORT || 22);
 const username = process.env.SERVER_USER || "root";
 const password = process.env.SERVER_PASS;
-const defaultKeyPath =
-  "C:\\Users\\tech\\.gemini\\antigravity\\brain\\b089cf3f-039b-48b9-89cf-4d6d9b42ca82\\scratch\\deploy_key";
-const privateKeyPath =
-  process.env.SERVER_KEY || (fs.existsSync(defaultKeyPath) ? defaultKeyPath : null);
+const privateKeyPath = process.env.SERVER_KEY || null;
 
 const command = process.argv.slice(2).join(" ");
 

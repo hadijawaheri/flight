@@ -103,7 +103,8 @@ export function CancelBookingDialog({ booking }: { booking: BookingDto }) {
               </div>
             </dl>
             <p className="text-muted-foreground text-xs">
-              زمان برگشت پول به حساب بسته به بانک شما از چند روز تا چند هفته است.
+              در نسخه‌ی نمایشی پولی دریافت یا برگردانده نمی‌شود؛ در یک سرویس واقعی، زمان برگشت پول
+              به بانک و ایرلاین بستگی دارد.
             </p>
           </div>
         )}

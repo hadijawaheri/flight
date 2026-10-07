@@ -6,16 +6,23 @@ import type {
   RefundResult,
 } from "@flysmart/contracts";
 import {
+  airportLabel,
   type BatteryVerdict,
   calculateExcessBaggage,
   calculateRefund,
+  destinationsFrom,
   evaluateBattery,
   EXCESS_BAGGAGE_RATE_PERCENT,
   type FareFamily,
   type FlightType,
   formatToman,
+  getAirport,
+  kindGap,
+  locationLabel,
   refundPolicyFor,
   type RefundReason,
+  ROUTE_KIND_LABELS,
+  ROUTE_KINDS,
   tomanToRial,
   wattHoursFromMah,
 } from "@flysmart/contracts";
@@ -237,5 +244,36 @@ export function cheapestFlightsCard(
         ? `برای ${date} پرواز قابل رزروی پیدا نشد؛ تاریخ دیگری را بررسی کنید.`
         : "قیمت برای یک بزرگسال و شامل مالیات است.",
     href: best ? best.href : null,
+  };
+}
+
+/**
+ * Where an airport flies, split into domestic and international. Imam Khomeini has no domestic
+ * flights, so for it one of the two rows is "none" — said plainly instead of left blank.
+ */
+const placeLabel = (code: string): string => {
+  const airport = getAirport(code);
+  return airport ? airportLabel(airport) : locationLabel(code);
+};
+
+export function routeNetworkCard(origin: string): AssistantCardDto {
+  const rows = ROUTE_KINDS.map((kind) => {
+    const cities = destinationsFrom(origin, kind).map((code) => {
+      const airport = getAirport(code);
+      return airport ? airportLabel(airport) : code;
+    });
+    return {
+      label: `پرواز ${ROUTE_KIND_LABELS[kind]}`,
+      value:
+        cities.length > 0 ? cities.join("، ") : (kindGap(origin, kind) ?? "مسیری ثبت نشده است"),
+    };
+  });
+  return {
+    tool: "route_network",
+    title: `مقصدهای ${placeLabel(origin)}`,
+    tone: "info",
+    rows,
+    note: "فقط پروازهای مستقیم این سرویس نمایش داده می‌شود؛ مسیرها دوطرفه‌اند.",
+    href: null,
   };
 }

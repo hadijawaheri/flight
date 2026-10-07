@@ -1,6 +1,12 @@
 "use client";
 
-import { DESTINATION_SCOPES, normalizeDigits, tomanToRial } from "@flysmart/contracts";
+import type { RouteKind } from "@flysmart/contracts";
+import {
+  airportsServing,
+  DESTINATION_SCOPES,
+  normalizeDigits,
+  tomanToRial,
+} from "@flysmart/contracts";
 import { ArrowLeftIcon, CompassIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -17,11 +23,11 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { AirportCombobox } from "@/features/search";
+import { AirportCombobox, DEFAULT_ORIGIN, retarget } from "@/features/search";
 import { formatDuration, formatLongDate } from "@/lib/format";
 import { paths } from "@/lib/paths";
 
@@ -33,6 +39,21 @@ const SCOPE_LABELS: Record<(typeof DESTINATION_SCOPES)[number], string> = {
   international: "خارجی",
 };
 
+type Scope = (typeof DESTINATION_SCOPES)[number];
+
+/** Iranian airports a traveller can leave from for the chosen kind of destination. */
+function originsFor(scope: Scope): string[] {
+  const kinds: RouteKind[] =
+    scope === "all"
+      ? ["DOMESTIC", "INTERNATIONAL"]
+      : [scope === "domestic" ? "DOMESTIC" : "INTERNATIONAL"];
+  return kinds.flatMap((kind) =>
+    airportsServing(kind)
+      .filter((airport) => airport.countryCode === "IR")
+      .map((airport) => airport.code),
+  );
+}
+
 interface Submitted {
   origin: string;
   budget: number;
@@ -41,12 +62,23 @@ interface Submitted {
 
 /** "Where can I go for X?" — the question people actually have when the budget, not the city, is fixed. */
 export function ExploreView() {
-  const [origin, setOrigin] = useState("THR");
+  const [origin, setOrigin] = useState(DEFAULT_ORIGIN.DOMESTIC);
   const [budgetText, setBudgetText] = useState("3000000");
-  const [scope, setScope] = useState<(typeof DESTINATION_SCOPES)[number]>("all");
+  const [scope, setScope] = useState<Scope>("all");
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const result = useExplore(submitted);
+
+  /** An origin that cannot fly the new kind (Imam Khomeini has no domestic flights) is swapped for one that can. */
+  function changeScope(next: Scope) {
+    setScope(next);
+    if (next !== "all") {
+      setOrigin(
+        retarget(next === "domestic" ? "DOMESTIC" : "INTERNATIONAL", { origin, destination: "" })
+          .origin,
+      );
+    }
+  }
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -65,7 +97,7 @@ export function ExploreView() {
         <form
           onSubmit={submit}
           noValidate
-          className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto] md:items-end"
+          className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] md:items-start"
           aria-label="جست‌وجو بر اساس بودجه"
         >
           <Field>
@@ -75,6 +107,7 @@ export function ExploreView() {
               value={origin}
               onChange={setOrigin}
               placeholder="از کجا؟"
+              allowed={originsFor(scope)}
             />
           </Field>
           <Field data-invalid={Boolean(error)}>
@@ -88,18 +121,14 @@ export function ExploreView() {
               className="text-start"
               aria-invalid={Boolean(error)}
             />
-            {error ? (
-              <FieldError>{error}</FieldError>
-            ) : (
-              <FieldDescription>قیمت نهایی بلیت با مالیات و کارمزد.</FieldDescription>
-            )}
+            {error && <FieldError>{error}</FieldError>}
           </Field>
           <Field>
             <FieldLabel id="explore-scope-label">مقصد</FieldLabel>
             <ToggleGroup
               type="single"
               value={scope}
-              onValueChange={(value) => value && setScope(value as typeof scope)}
+              onValueChange={(value) => value && changeScope(value as Scope)}
               aria-labelledby="explore-scope-label"
             >
               {DESTINATION_SCOPES.map((item) => (
@@ -109,16 +138,22 @@ export function ExploreView() {
               ))}
             </ToggleGroup>
           </Field>
-          <Button type="submit" size="lg" className="h-10">
-            <CompassIcon data-icon="inline-start" />
-            پیشنهاد بده
-          </Button>
+          <Field>
+            <FieldLabel aria-hidden="true" className="invisible max-md:hidden">
+              مبدأ
+            </FieldLabel>
+            <Button type="submit" size="lg" className="h-10">
+              <CompassIcon data-icon="inline-start" />
+              پیشنهاد بده
+            </Button>
+          </Field>
         </form>
       </Card>
 
       {submitted === null ? (
         <p className="text-muted-foreground text-sm">
-          بودجه‌ات را بنویس تا ارزان‌ترین مقصدهای ۳۰ روز آینده را ببینی.
+          بودجه‌ات را بنویس تا ارزان‌ترین مقصدهای ۳۰ روز آینده را ببینی. بودجه، قیمت نهایی بلیت یک
+          نفر با مالیات و کارمزد است.
         </p>
       ) : result.isPending ? (
         <div

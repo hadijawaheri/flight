@@ -1,6 +1,7 @@
 "use client";
 
 import type { CreateBookingInput, FlightOfferDto, PassengerDto } from "@flysmart/contracts";
+import { passengerDisplayName, passengerIdentityKey, PASSPORT_MESSAGES } from "@flysmart/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -37,6 +45,7 @@ import {
   buildCheckoutSchema,
   type CheckoutFormInput,
   type CheckoutFormOutput,
+  shortPassportSlots,
   slotTypesFor,
 } from "../checkout-schema";
 import { useCreateBooking } from "../queries";
@@ -58,6 +67,7 @@ function emptyPassenger(): Partial<PassengerInput> {
     lastNameFa: "",
     firstNameEn: "",
     lastNameEn: "",
+    nationality: "IR",
     nationalId: "",
     birthDate: "",
     gender: undefined,
@@ -73,6 +83,7 @@ function fromVault(saved: PassengerDto): PassengerInput {
     lastNameFa: saved.lastNameFa,
     firstNameEn: saved.firstNameEn,
     lastNameEn: saved.lastNameEn,
+    nationality: saved.nationality,
     nationalId: saved.nationalId,
     birthDate: saved.birthDate,
     gender: saved.gender,
@@ -114,11 +125,8 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
 
   const slotTypes = slotTypesFor(mix);
   const international = offers.some((offer) => offer.international);
-  const schema = buildCheckoutSchema({
-    slotTypes,
-    flightDates: offers.map((offer) => dateOfLocalTime(offer.origin.localTime)),
-    international,
-  });
+  const flightDates = offers.map((offer) => dateOfLocalTime(offer.origin.localTime));
+  const schema = buildCheckoutSchema({ slotTypes, flightDates, international });
 
   const form = useForm<CheckoutFormInput, unknown, CheckoutFormOutput>({
     resolver: zodResolver(schema),
@@ -127,6 +135,7 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
       passengers: slotTypes.map(() => emptyPassenger()),
       contact: { mobile, email: "" },
       seatPreference: "ANY",
+      passportValidityAcknowledged: false,
     },
   });
 
@@ -140,6 +149,7 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
   }, [vault.data, form]);
 
   const watched = useWatch({ control: form.control, name: "passengers" });
+  const shortPassports = shortPassportSlots(watched, { flightDates, international });
   const quotedTotal = offers.reduce((sum, offer) => sum + offer.fare.total, 0);
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -151,6 +161,7 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
       contact: values.contact,
       quotedTotal,
       seatPreference: values.seatPreference,
+      passportValidityAcknowledged: values.passportValidityAcknowledged,
     };
     try {
       const booking = await createBooking.mutateAsync(payload);
@@ -216,8 +227,19 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
           <Alert>
             <AlertTitle>پرواز خارجی</AlertTitle>
             <AlertDescription>
-              گذرنامه‌ی هر مسافر باید حداقل ۶ ماه پس از آخرین پرواز اعتبار داشته باشد. نام لاتین را
-              دقیقاً مطابق گذرنامه بنویسید.
+              گذرنامه‌ی هر مسافر الزامی است و بهتر است حداقل ۶ ماه پس از آخرین پرواز اعتبار داشته
+              باشد. نام لاتین را دقیقاً مطابق گذرنامه بنویسید.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {slotTypes.some((type) => type !== "ADULT") && (
+          <Alert>
+            <AlertTitle>همراه کودک و نوزاد</AlertTitle>
+            <AlertDescription>
+              در هر رزرو، همراه کودک یا نوزاد باید حداقل ۱۸ سال داشته باشد و به ازای هر نوزاد یک
+              همراه ۱۸ سال به بالا لازم است؛ مسافر ۱۲ تا ۱۷ ساله به‌تنهایی نمی‌تواند مسئول آن‌ها
+              باشد.
             </AlertDescription>
           </Alert>
         )}
@@ -258,7 +280,7 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
                             form.getValues(`passengers.${index}.savedPassengerId`) !== saved.id
                           }
                         >
-                          {saved.firstNameFa} {saved.lastNameFa}
+                          {passengerDisplayName(saved)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -277,11 +299,48 @@ export function CheckoutNewView({ outboundId, returnId, mix, mobile }: CheckoutN
           </Card>
         ))}
 
+        {shortPassports.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <Alert className="bg-warning-soft text-warning-ink">
+              <AlertTriangleIcon />
+              <AlertTitle>اعتبار گذرنامه کمتر از ۶ ماه است</AlertTitle>
+              <AlertDescription className="text-warning-ink">
+                <p>{PASSPORT_MESSAGES.shortValidity}</p>
+                <p>
+                  مسافران مشمول:{" "}
+                  {shortPassports.map((slot) => `مسافر ${formatNumber(slot + 1)}`).join("، ")}
+                </p>
+              </AlertDescription>
+            </Alert>
+            <Controller
+              name="passportValidityAcknowledged"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                  <Checkbox
+                    id="passport-validity-ack"
+                    checked={field.value === true}
+                    onCheckedChange={(checked) => field.onChange(checked === true)}
+                    aria-invalid={fieldState.invalid}
+                  />
+                  <FieldContent>
+                    <FieldLabel htmlFor="passport-validity-ack" className="font-normal">
+                      {PASSPORT_MESSAGES.acknowledgementLabel}
+                    </FieldLabel>
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </FieldContent>
+                </Field>
+              )}
+            />
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">اطلاعات تماس</CardTitle>
             <CardDescription>
-              بلیت و پیام‌های مربوط به پرواز به این شماره ارسال می‌شود.
+              شماره‌ی تماس برای شناسایی رزرو و هماهنگی‌های پرواز است. در این نسخه‌ی نمایشی پیامکی
+              ارسال نمی‌شود.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -416,9 +475,10 @@ async function rememberTravelers(
   passengers: CheckoutFormOutput["passengers"],
   vault: readonly PassengerDto[],
 ): Promise<void> {
-  const known = new Set(vault.map((item) => item.nationalId));
+  const known = new Set(vault.map((item) => passengerIdentityKey(item)));
   for (const passenger of passengers) {
-    if (passenger.savedPassengerId || known.has(passenger.nationalId)) continue;
+    const key = passengerIdentityKey(passenger);
+    if (passenger.savedPassengerId || key === null || known.has(key)) continue;
     try {
       await passengersApi.create({ ...passenger, isDefault: false });
     } catch {

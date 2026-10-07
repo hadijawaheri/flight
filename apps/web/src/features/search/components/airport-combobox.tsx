@@ -2,7 +2,7 @@
 
 import { getAirport, locationLabel, searchAirports } from "@flysmart/contracts";
 import { MapPinIcon, SearchIcon } from "lucide-react";
-import { useId, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,12 @@ interface AirportComboboxProps {
   onChange: (code: string) => void;
   placeholder: string;
   invalid?: boolean;
-  /** Restrict the list, e.g. to origins that have flights. Defaults to every airport. */
+  /** Hide one airport, e.g. the one chosen at the other end. */
   exclude?: string;
+  /** Only these airports (and groups containing one) are offered; defaults to every airport. */
+  allowed?: readonly string[];
+  /** Shown when nothing matches the typed text, e.g. to point at the other kind of flight. */
+  renderEmpty?: (query: string, close: () => void) => ReactNode;
 }
 
 export function AirportCombobox({
@@ -26,12 +30,14 @@ export function AirportCombobox({
   placeholder,
   invalid,
   exclude,
+  allowed,
+  renderEmpty,
 }: AirportComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const listId = useId();
 
-  const hits = searchAirports(query, 8).filter((hit) => hit.code !== exclude);
+  const hits = searchAirports(query, 12, allowed).filter((hit) => hit.code !== exclude);
   const airport = value ? getAirport(value) : undefined;
 
   function pick(code: string) {
@@ -97,7 +103,13 @@ export function AirportCombobox({
           className="mt-2 flex max-h-64 flex-col overflow-y-auto"
         >
           {hits.length === 0 && (
-            <li className="text-muted-foreground px-2 py-3 text-sm">فرودگاهی پیدا نشد.</li>
+            <li className="text-muted-foreground px-2 py-3 text-sm">
+              فرودگاهی پیدا نشد.
+              {renderEmpty?.(query, () => {
+                setOpen(false);
+                setQuery("");
+              })}
+            </li>
           )}
           {hits.map((hit) => (
             <li key={hit.code} role="option" aria-selected={hit.code === value}>

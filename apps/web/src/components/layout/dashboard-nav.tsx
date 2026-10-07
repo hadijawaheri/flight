@@ -22,9 +22,12 @@ export function DashboardNav() {
   return (
     <nav
       aria-label="بخش‌های حساب"
-      className="-mx-4 overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0"
+      className="-mx-4 -my-1.5 overflow-x-auto px-4 py-1.5 lg:m-0 lg:overflow-visible lg:p-0"
     >
-      <ul className="flex gap-1 lg:flex-col" role="list">
+      <ul
+        className="lg:bg-card lg:shadow-panel lg:ring-foreground/10 flex gap-1.5 lg:flex-col lg:gap-1 lg:rounded-2xl lg:p-2 lg:ring-1"
+        role="list"
+      >
         {ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
           return (
@@ -33,10 +36,10 @@ export function DashboardNav() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "focus-visible:ring-ring/50 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-3",
+                  "focus-visible:ring-ring/50 flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-3",
                   active
-                    ? "bg-brand-soft text-brand-ink"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:bg-muted hover:text-foreground lg:bg-transparent",
                 )}
               >
                 <Icon className="size-4" aria-hidden="true" />

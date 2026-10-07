@@ -11,7 +11,7 @@ export function PageContainer({
   className?: string;
 }) {
   return (
-    <div className={cn("mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8", className)}>
+    <div className={cn("mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-10 pb-12", className)}>
       {children}
     </div>
   );

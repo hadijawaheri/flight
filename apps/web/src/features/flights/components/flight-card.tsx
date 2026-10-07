@@ -1,11 +1,10 @@
 import type { FlightOfferDto } from "@flysmart/contracts";
-import { ArrowLeftIcon, LuggageIcon, UtensilsIcon } from "lucide-react";
+import { ChevronDownIcon, LuggageIcon, UtensilsIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Toman } from "@/components/shared/toman";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { formatClock, formatDuration, formatNumber } from "@/lib/format";
 import { paths } from "@/lib/paths";
@@ -13,6 +12,7 @@ import { paths } from "@/lib/paths";
 import { FLIGHT_TYPE_LABELS, TAG_LABELS } from "../labels";
 import { InsightBadge } from "./insight-badge";
 import { RefundPolicyList } from "./refund-policy";
+import { RouteLine } from "./route-line";
 
 interface FlightCardProps {
   offer: FlightOfferDto;
@@ -22,15 +22,16 @@ interface FlightCardProps {
   detailQuery: string;
 }
 
+/** An offer drawn as a boarding pass: the flight on the body, the price and the action on the stub. */
 export function FlightCard({ offer, onSelect, selectLabel, detailQuery }: FlightCardProps) {
   const scarce = offer.seatsLeft <= 5;
 
   return (
-    <Card className="gap-0 py-0">
-      <div className="grid gap-4 p-4 md:grid-cols-[1fr_auto] md:items-center">
-        <div className="flex min-w-0 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-semibold">{offer.airline.nameFa}</span>
+    <div className="ticket-wrap">
+      <article className="ticket text-card-foreground grid overflow-hidden text-sm md:grid-cols-[minmax(0,1fr)_var(--stub)]">
+        <div className="flex min-w-0 flex-col gap-4 p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-base font-bold">{offer.airline.nameFa}</span>
             <span className="text-muted-foreground tnum" dir="ltr">
               {offer.flightNumber}
             </span>
@@ -45,56 +46,64 @@ export function FlightCard({ offer, onSelect, selectLabel, detailQuery }: Flight
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col">
-              <span className="tnum text-2xl font-extrabold">
-                {formatClock(offer.origin.localTime)}
-              </span>
-              <span className="text-muted-foreground text-xs">{offer.origin.cityFa}</span>
-            </div>
-            <div className="text-muted-foreground flex min-w-16 flex-1 flex-col items-center gap-1 text-xs">
-              <span>{formatDuration(offer.durationMinutes)}</span>
-              <div className="flex w-full items-center gap-1">
-                <span className="bg-border h-px flex-1" />
-                <ArrowLeftIcon className="size-3.5 rtl:rotate-0" aria-hidden="true" />
-              </div>
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4">
+            <Endpoint
+              time={offer.origin.localTime}
+              code={offer.origin.airportCode}
+              city={offer.origin.cityFa}
+            />
+            <div className="text-muted-foreground flex flex-col items-center gap-1.5 text-xs">
+              <span className="tnum">{formatDuration(offer.durationMinutes)}</span>
+              <RouteLine />
               <span>بدون توقف</span>
             </div>
-            <div className="flex flex-col">
-              <span className="tnum text-2xl font-extrabold">
-                {formatClock(offer.destination.localTime)}
-              </span>
-              <span className="text-muted-foreground text-xs">{offer.destination.cityFa}</span>
-            </div>
+            <Endpoint
+              time={offer.destination.localTime}
+              code={offer.destination.airportCode}
+              city={offer.destination.cityFa}
+            />
           </div>
 
           <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
               <LuggageIcon className="size-3.5" aria-hidden="true" />
               بار {formatNumber(offer.baggageKg)} کیلو
             </span>
             {offer.meal && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1.5">
                 <UtensilsIcon className="size-3.5" aria-hidden="true" />
                 پذیرایی
               </span>
             )}
             {scarce && (
-              <span className="text-warning-ink font-medium">
+              <span className="text-warning-ink font-semibold">
                 فقط {formatNumber(offer.seatsLeft)} صندلی مانده
               </span>
             )}
           </div>
+
+          <Collapsible className="group/rules">
+            <CollapsibleTrigger className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 -mx-1 flex items-center gap-1 rounded-md px-1 py-0.5 text-xs outline-none focus-visible:ring-3">
+              قوانین استرداد و تغییر این پرواز
+              <ChevronDownIcon
+                className="size-3.5 transition-transform group-data-[state=open]/rules:rotate-180"
+                aria-hidden="true"
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3">
+              <RefundPolicyList policy={offer.refundPolicy} />
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
-        <div className="flex flex-row items-center justify-between gap-4 border-t pt-3 md:flex-col md:items-end md:border-s md:border-t-0 md:ps-5 md:pt-0">
-          <div className="flex flex-col gap-1 md:items-end">
-            <Toman rial={offer.pricePerAdult} className="text-xl" />
+        <div className="ticket-stub border-foreground/25 flex flex-col justify-between gap-4 border-t-2 border-dashed p-5 sm:flex-row sm:items-center md:flex-col md:items-stretch md:justify-center md:border-s-2 md:border-t-0">
+          <div className="flex flex-col gap-1">
+            <Toman rial={offer.pricePerAdult} className="text-2xl font-black" />
             <span className="text-muted-foreground text-xs">برای هر بزرگسال، با مالیات</span>
-            <InsightBadge insight={offer.insight} />
+            <InsightBadge insight={offer.insight} className="mt-1" />
           </div>
-          <div className="flex flex-col gap-2">
-            <Button type="button" onClick={() => onSelect(offer)}>
+          <div className="flex flex-col gap-1.5 sm:shrink-0">
+            <Button type="button" size="lg" onClick={() => onSelect(offer)}>
               {selectLabel}
             </Button>
             <Button asChild variant="ghost" size="sm">
@@ -102,16 +111,19 @@ export function FlightCard({ offer, onSelect, selectLabel, detailQuery }: Flight
             </Button>
           </div>
         </div>
-      </div>
+      </article>
+    </div>
+  );
+}
 
-      <Collapsible>
-        <CollapsibleTrigger className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 w-full border-t px-4 py-2 text-start text-xs outline-none focus-visible:ring-3">
-          قوانین استرداد و تغییر این پرواز
-        </CollapsibleTrigger>
-        <CollapsibleContent className="px-4 pb-4">
-          <RefundPolicyList policy={offer.refundPolicy} />
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+function Endpoint({ time, code, city }: { time: string; code: string; city: string }) {
+  return (
+    <div className="flex flex-col">
+      <span className="tnum text-3xl leading-none font-black">{formatClock(time)}</span>
+      <span className="mt-1.5 font-medium">{city}</span>
+      <span className="text-muted-foreground tnum text-xs tracking-widest" dir="ltr">
+        {code}
+      </span>
+    </div>
   );
 }

@@ -1,6 +1,10 @@
 import { percentOf } from "../common/money";
 
-/** Typical excess-baggage rate: percent of the full economy fare per extra kilogram. */
+/**
+ * Default excess-baggage rate: percent of the route's economy fare per extra kilogram. Iranian
+ * domestic carriers commonly quote 1% (a few more); IATA's weight-system norm is roughly 1–1.5%
+ * of the highest one-way economy fare, and many airlines now publish flat per-kg rates instead.
+ */
 export const EXCESS_BAGGAGE_RATE_PERCENT = 1;
 
 export interface ExcessBaggageInput {

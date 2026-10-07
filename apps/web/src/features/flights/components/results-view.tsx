@@ -2,13 +2,7 @@
 
 import type { FlightOfferDto, FlightSort } from "@flysmart/contracts";
 import { locationLabel } from "@flysmart/contracts";
-import {
-  ArrowLeftIcon,
-  CheckCircle2Icon,
-  PlaneIcon,
-  SearchXIcon,
-  SlidersHorizontalIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, CheckCircle2Icon, SearchXIcon, SlidersHorizontalIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -16,7 +10,7 @@ import { ErrorState } from "@/components/shared/error-state";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Empty,
   EmptyDescription,
@@ -51,6 +45,7 @@ import { detailSearch, stepAfterSelecting } from "../selection";
 import { FareCalendarStrip } from "./fare-calendar-strip";
 import { FiltersPanel } from "./filters-panel";
 import { FlightCard } from "./flight-card";
+import { RouteLine } from "./route-line";
 
 interface ResultsViewProps {
   query: TripQuery;
@@ -104,27 +99,28 @@ export function ResultsView({ query, today, outboundId }: ResultsViewProps) {
     return `?${params.toString()}`;
   }
 
-  const title = `${locationLabel(route.origin)} به ${locationLabel(route.destination)}`;
-
   return (
     <div className="flex flex-col gap-5">
-      <Card className="gap-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            {roundTrip && (
-              <div className="flex items-center gap-2 text-xs" aria-label="مرحله‌ی انتخاب">
-                <Badge variant={leg === "OUTBOUND" ? "default" : "secondary"}>۱. پرواز رفت</Badge>
-                <Badge variant={leg === "RETURN" ? "default" : "secondary"}>۲. پرواز برگشت</Badge>
-              </div>
-            )}
-            <h1 className="flex items-center gap-2 text-xl font-extrabold md:text-2xl">
-              <PlaneIcon
-                className="text-primary size-5 shrink-0 rtl:-scale-x-100"
-                aria-hidden="true"
-              />
-              <span className="truncate">{title}</span>
+      <header className="flex flex-col gap-4">
+        {roundTrip && (
+          <div className="flex items-center gap-2 text-xs" aria-label="مرحله‌ی انتخاب">
+            <Badge variant={leg === "OUTBOUND" ? "default" : "outline"} className="bg-card/80">
+              ۱. پرواز رفت
+            </Badge>
+            <Badge variant={leg === "RETURN" ? "default" : "outline"} className="bg-card/80">
+              ۲. پرواز برگشت
+            </Badge>
+          </div>
+        )}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-2">
+            <h1 className="flex flex-wrap items-center gap-x-4 gap-y-1 text-3xl font-black md:text-5xl">
+              <span>{locationLabel(route.origin)}</span>
+              <RouteLine className="w-20 md:w-36" />
+              <span className="sr-only">به</span>
+              <span>{locationLabel(route.destination)}</span>
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-foreground/75 text-sm">
               {formatLongDate(route.date)} · {partySummary(query)} ·{" "}
               {query.cabin === "BUSINESS" ? "بیزینس" : "اکونومی"}
             </p>
@@ -138,8 +134,12 @@ export function ResultsView({ query, today, outboundId }: ResultsViewProps) {
             {editing ? "بستن" : "تغییر جست‌وجو"}
           </Button>
         </div>
-        {editing && <SearchForm today={today} initial={query} className="border-t pt-4" />}
-      </Card>
+        {editing && (
+          <Card className="p-5">
+            <SearchForm today={today} initial={query} />
+          </Card>
+        )}
+      </header>
 
       {leg === "RETURN" && (
         <Alert>
@@ -193,16 +193,18 @@ export function ResultsView({ query, today, outboundId }: ResultsViewProps) {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-        <aside className="hidden lg:block" aria-label="فیلترها">
+        <aside className="hidden lg:sticky lg:top-24 lg:block lg:self-start" aria-label="فیلترها">
           {search.data && (
-            <Card className="p-4">
-              <FiltersPanel
-                offers={offers}
-                summary={search.data.summary}
-                filters={filters}
-                onChange={updateFilters}
-                onReset={resetFilters}
-              />
+            <Card>
+              <CardContent>
+                <FiltersPanel
+                  offers={offers}
+                  summary={search.data.summary}
+                  filters={filters}
+                  onChange={updateFilters}
+                  onReset={resetFilters}
+                />
+              </CardContent>
             </Card>
           )}
         </aside>
@@ -249,7 +251,7 @@ export function ResultsView({ query, today, outboundId }: ResultsViewProps) {
           {search.isPending ? (
             <div className="flex flex-col gap-3" role="status" aria-label="در حال بارگذاری پروازها">
               {Array.from({ length: 4 }, (_, index) => (
-                <Skeleton key={index} className="h-44 w-full rounded-xl" />
+                <Skeleton key={index} className="h-48 w-full rounded-2xl" />
               ))}
             </div>
           ) : search.isError ? (
@@ -259,7 +261,7 @@ export function ResultsView({ query, today, outboundId }: ResultsViewProps) {
               title="جست‌وجوی پرواز انجام نشد"
             />
           ) : shown.length === 0 ? (
-            <Empty className="border">
+            <Empty className="bg-card shadow-panel border">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <SearchXIcon />
@@ -280,7 +282,7 @@ export function ResultsView({ query, today, outboundId }: ResultsViewProps) {
               )}
             </Empty>
           ) : (
-            <ul className="flex flex-col gap-3" role="list">
+            <ul className="flex flex-col gap-4" role="list">
               {shown.map((offer) => (
                 <li key={offer.id}>
                   <FlightCard

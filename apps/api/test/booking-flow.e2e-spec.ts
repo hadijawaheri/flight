@@ -4,8 +4,10 @@ import request from "supertest";
 import type { Agent } from "./helpers.js";
 import {
   adultPassenger,
+  birthDateYearsAgo,
   createTestApp,
   firstOffer,
+  foreignPassenger,
   type FoundOffer,
   futureDate,
   signedInAgent,
@@ -197,5 +199,119 @@ describe("booking flow (e2e)", () => {
       .expect(201);
     expect(res.body.data.slices).toHaveLength(2);
     expect(res.body.data.passengers[0].seats.RETURN).toBeTruthy();
+  });
+
+  describe("escort rules", () => {
+    it("refuses a 12-17 year old as the only companion of a child or infant", async () => {
+      const agent = await signedInAgent(app);
+      const offer = await firstOffer(app, { ...route, adults: 1, children: 1 });
+      const teen = adultPassenger({ birthDate: birthDateYearsAgo(16) });
+      const child = adultPassenger({ birthDate: birthDateYearsAgo(6) });
+
+      const res = await book(agent, offer, { passengers: [teen, child] }).expect(400);
+      expect(res.body.code).toBe("VALIDATION_FAILED");
+      expect(res.body.message).toContain("۱۸");
+    });
+
+    it("books an adult travelling with an infant", async () => {
+      const agent = await signedInAgent(app);
+      const offer = await firstOffer(app, { ...route, adults: 1, infants: 1 });
+      const infant = adultPassenger({ birthDate: birthDateYearsAgo(1) });
+
+      const res = await book(agent, offer, { passengers: [adultPassenger(), infant] }).expect(201);
+      expect(res.body.data.passengers.map((p: { type: string }) => p.type)).toEqual([
+        "ADULT",
+        "INFANT",
+      ]);
+    });
+  });
+
+  describe("foreign passengers", () => {
+    it("books a non-Iranian with only a passport and shows no national code", async () => {
+      const agent = await signedInAgent(app);
+      const offer = await firstOffer(app, route);
+
+      const res = await book(agent, offer, { passengers: [foreignPassenger()] }).expect(201);
+      const [saved] = res.body.data.passengers;
+      expect(saved.nationality).toBe("DE");
+      expect(saved.nationalIdMasked).toBeNull();
+      expect(saved.passportNumberMasked).toMatch(/^\*+\w{3}$/);
+    });
+
+    it("needs the passport of a foreigner even on a domestic flight", async () => {
+      const agent = await signedInAgent(app);
+      const offer = await firstOffer(app, route);
+
+      const res = await book(agent, offer, {
+        passengers: [foreignPassenger({ passportNumber: undefined, passportExpiry: undefined })],
+      }).expect(400);
+      expect(res.body.code).toBe("VALIDATION_FAILED");
+    });
+
+    it("refuses the same foreigner twice on one flight by passport number", async () => {
+      const agent = await signedInAgent(app);
+      const offer = await firstOffer(app, route);
+      const traveller = foreignPassenger();
+
+      await book(agent, offer, { passengers: [traveller] }).expect(201);
+      const dup = await book(agent, offer, { passengers: [traveller] }).expect(409);
+      expect(dup.body.code).toBe("CONFLICT");
+    });
+  });
+
+  describe("passport validity on international flights", () => {
+    const abroad = { origin: "IKA", destination: "IST" };
+
+    async function internationalOffer(): Promise<{ offer: FoundOffer; date: string }> {
+      for (let ahead = 21; ahead < 35; ahead += 1) {
+        const date = futureDate(ahead);
+        try {
+          return { offer: await firstOffer(app, { ...abroad, date }), date };
+        } catch {
+          // No flight that day in the simulated schedule: try the next one
+        }
+      }
+      throw new Error("No international flight found in the next two weeks");
+    }
+
+    const expiringIn = (date: string, days: number) =>
+      adultPassenger({
+        passportNumber: "A1234567",
+        passportExpiry: new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000)
+          .toISOString()
+          .slice(0, 10),
+      });
+
+    it("blocks a passport that is expired on the travel date, even when acknowledged", async () => {
+      const agent = await signedInAgent(app);
+      const { offer, date } = await internationalOffer();
+
+      const res = await book(agent, offer, {
+        passengers: [expiringIn(date, -1)],
+        passportValidityAcknowledged: true,
+      }).expect(400);
+      expect(res.body.code).toBe("VALIDATION_FAILED");
+    });
+
+    it("asks for an acknowledgement when under six months remain, then accepts it", async () => {
+      const agent = await signedInAgent(app);
+      const { offer, date } = await internationalOffer();
+      const passengers = [expiringIn(date, 60)];
+
+      const refused = await book(agent, offer, { passengers }).expect(400);
+      expect(refused.body.message).toContain("۶ ماه");
+      expect(refused.body.details).toEqual([
+        expect.objectContaining({ path: "passportValidityAcknowledged" }),
+      ]);
+
+      await book(agent, offer, { passengers, passportValidityAcknowledged: true }).expect(201);
+    });
+
+    it("books without any acknowledgement when the passport is valid for six months", async () => {
+      const agent = await signedInAgent(app);
+      const { offer, date } = await internationalOffer();
+
+      await book(agent, offer, { passengers: [expiringIn(date, 400)] }).expect(201);
+    });
   });
 });

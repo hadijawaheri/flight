@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T00:00:00Z",
+  "title": "Design System: FlySmart",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Electric Aviation Cobalt",
+        "canonical": "oklch(0.53 0.22 255)",
+        "tonalRamp": [
+          "oklch(0.25 0.1 255)",
+          "oklch(0.33 0.15 255)",
+          "oklch(0.4 0.18 258)",
+          "oklch(0.53 0.22 255)",
+          "oklch(0.65 0.18 252)",
+          "oklch(0.77 0.11 250)",
+          "oklch(0.88 0.06 248)",
+          "oklch(0.95 0.03 255)"
+        ]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Stratosphere Cloud White",
+        "canonical": "oklch(0.985 0.006 245)",
+        "tonalRamp": [
+          "oklch(0.16 0.04 255)",
+          "oklch(0.3 0.04 252)",
+          "oklch(0.47 0.035 250)",
+          "oklch(0.7 0.025 248)",
+          "oklch(0.84 0.02 246)",
+          "oklch(0.91 0.015 245)",
+          "oklch(0.955 0.012 245)",
+          "oklch(0.985 0.006 245)"
+        ]
+      },
+      "warning": {
+        "role": "secondary",
+        "displayName": "Solar Amber",
+        "canonical": "oklch(0.8 0.16 75)",
+        "tonalRamp": [
+          "oklch(0.25 0.06 60)",
+          "oklch(0.33 0.08 58)",
+          "oklch(0.42 0.1 55)",
+          "oklch(0.6 0.14 65)",
+          "oklch(0.8 0.16 75)",
+          "oklch(0.88 0.11 80)",
+          "oklch(0.94 0.07 85)",
+          "oklch(0.96 0.05 85)"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Dusk Night",
+        "canonical": "oklch(0.17 0.05 265)",
+        "tonalRamp": [
+          "oklch(0.17 0.05 265)",
+          "oklch(0.24 0.05 262)",
+          "oklch(0.37 0.05 258)",
+          "oklch(0.5 0.04 255)",
+          "oklch(0.65 0.035 252)",
+          "oklch(0.8 0.03 250)",
+          "oklch(0.9 0.02 247)",
+          "oklch(0.97 0.01 245)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Page title",
+        "purpose": "Route banner and PageHeader h1."
+      },
+      "ticket-time": {
+        "displayName": "Ticket time",
+        "purpose": "Departure and arrival times, tabular."
+      },
+      "price": {
+        "displayName": "Price",
+        "purpose": "Stub price."
+      }
+    },
+    "shadows": [
+      {
+        "name": "panel",
+        "value": "0 1px 2px color-mix(in oklch, var(--shadow-ink) 7%, transparent), 0 10px 28px -14px color-mix(in oklch, var(--shadow-ink) 22%, transparent)",
+        "purpose": "Panels, header bar, fare tiles."
+      },
+      {
+        "name": "lift",
+        "value": "0 2px 4px color-mix(in oklch, var(--shadow-ink) 8%, transparent), 0 18px 36px -16px color-mix(in oklch, var(--shadow-ink) 30%, transparent)",
+        "purpose": "Popovers."
+      },
+      {
+        "name": "ticket",
+        "value": "drop-shadow(0 0 .5px var(--ticket-edge)) drop-shadow(0 12px 14px color-mix(in oklch, var(--shadow-ink) 9%, transparent))",
+        "purpose": "FlightCard wrapper, filter so it follows the notch mask."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Ticket shadow lift (200ms) and cloud fade."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "48rem"
+      },
+      {
+        "name": "lg",
+        "value": "64rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default action, 36px high.",
+      "html": "<button class=\"ds-btn\">انتخاب</button>",
+      "css": ".ds-btn{height:36px;padding:0 14px;border-radius:var(--radius);border:1px solid transparent;background:var(--primary);color:var(--primary-foreground);font-weight:600;font-size:.875rem;box-shadow:0 1px 2px #0002;transition:all .15s}.ds-btn:hover{background:color-mix(in oklch,var(--primary) 85%,transparent)}.ds-btn:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}.ds-btn:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "40px field on card fill.",
+      "html": "<input class=\"ds-input\" placeholder=\"مبدا\">",
+      "css": ".ds-input{height:40px;width:100%;padding:4px 12px;border-radius:var(--radius);border:1px solid var(--input);background:var(--card);color:var(--foreground);font-size:.875rem;outline:none}.ds-input:focus-visible{border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in oklch,var(--ring) 50%,transparent)}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Opaque card with ring and panel shadow.",
+      "html": "<div class=\"ds-panel\"><strong>عنوان</strong><p>متن</p></div>",
+      "css": ".ds-panel{padding:20px;border-radius:calc(var(--radius)*1.8);background:var(--card);color:var(--card-foreground);box-shadow:0 1px 2px color-mix(in oklch,var(--shadow-ink) 7%,transparent),0 10px 28px -14px color-mix(in oklch,var(--shadow-ink) 22%,transparent),0 0 0 1px color-mix(in oklch,var(--foreground) 10%,transparent)}"
+    },
+    {
+      "name": "Fare Tile",
+      "kind": "chip",
+      "refersTo": "fare-tile",
+      "description": "Day price tile; selected is solid primary.",
+      "html": "<a class=\"ds-fare\" href=\"#\"><span>جمعه ۱۰ مهر</span><b>۱٬۲۰۰٬۰۰۰</b></a><a class=\"ds-fare ds-fare-on\" href=\"#\"><span>شنبه ۱۱ مهر</span><b>۱٬۱۰۰٬۰۰۰</b></a>",
+      "css": ".ds-fare{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:112px;height:72px;margin-inline-end:8px;border-radius:calc(var(--radius)*1.4);border:1px solid var(--border);background:var(--card);color:var(--foreground);font-size:.75rem;text-decoration:none;font-variant-numeric:tabular-nums;box-shadow:0 1px 2px color-mix(in oklch,var(--shadow-ink) 7%,transparent)}.ds-fare:hover{background:var(--muted)}.ds-fare b{font-size:.875rem}.ds-fare-on,.ds-fare-on:hover{background:var(--primary);border-color:var(--primary);color:var(--primary-foreground)}"
+    },
+    {
+      "name": "Route Line",
+      "kind": "custom",
+      "refersTo": "route-line",
+      "description": "Dot, dashed rule, plane, dashed rule, dot.",
+      "html": "<span class=\"ds-route\"><i class=\"ds-dot-o\"></i><i class=\"ds-rule\"></i><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z\"/></svg><i class=\"ds-rule\"></i><i class=\"ds-dot\"></i></span>",
+      "css": ".ds-route{display:flex;align-items:center;gap:6px;width:240px;color:var(--primary)}.ds-route svg{transform:rotate(45deg);flex:none}.ds-rule{flex:1;border-top:2px dashed color-mix(in oklch,var(--foreground) 25%,transparent)}.ds-dot-o{width:10px;height:10px;border-radius:9999px;border:2px solid var(--primary);background:var(--card)}.ds-dot{width:10px;height:10px;border-radius:9999px;background:var(--primary)}"
+    },
+    {
+      "name": "Boarding Pass",
+      "kind": "card",
+      "refersTo": "ticket-stub",
+      "description": "Flight offer: body, notches, dashed perforation, price stub.",
+      "html": "<div class=\"ds-wrap\"><article class=\"ds-ticket\"><div class=\"ds-body\"><b>ایران ایر</b><div class=\"ds-t\">۰۸:۱۵ — ۰۹:۴۵</div></div><div class=\"ds-stub\"><b class=\"ds-price\">۱٬۲۰۰٬۰۰۰</b><button class=\"ds-btn2\">انتخاب</button></div></article></div>",
+      "css": ".ds-wrap{filter:drop-shadow(0 0 .5px var(--ticket-edge)) drop-shadow(0 12px 14px color-mix(in oklch,var(--shadow-ink) 9%,transparent))}.ds-ticket{--stub:13.5rem;--notch:.7rem;--cut:var(--stub);display:grid;grid-template-columns:minmax(0,1fr) var(--stub);border-radius:calc(var(--radius)*1.8);background:var(--card);color:var(--card-foreground);overflow:hidden;mask:radial-gradient(circle var(--notch) at var(--cut) 0,#0000 calc(var(--notch) - .5px),#000 var(--notch)) top/100% 51% no-repeat,radial-gradient(circle var(--notch) at var(--cut) 100%,#0000 calc(var(--notch) - .5px),#000 var(--notch)) bottom/100% 51% no-repeat}.ds-body{padding:20px;display:flex;flex-direction:column;gap:12px}.ds-t{font-size:1.875rem;font-weight:900;font-variant-numeric:tabular-nums}.ds-stub{background:var(--ticket-stub);border-inline-start:2px dashed color-mix(in oklch,var(--foreground) 25%,transparent);padding:20px;display:flex;flex-direction:column;justify-content:center;gap:12px}.ds-price{font-size:1.5rem;font-weight:900}.ds-btn2{height:44px;border:0;border-radius:var(--radius);background:var(--primary);color:var(--primary-foreground);font-weight:600;font-size:1rem}"
+    },
+    {
+      "name": "Dashboard Nav",
+      "kind": "nav",
+      "refersTo": "panel",
+      "description": "Sidebar panel from lg; current is solid primary.",
+      "html": "<ul class=\"ds-nav\"><li><a class=\"on\" href=\"#\">نمای کلی</a></li><li><a href=\"#\">سفرهای من</a></li></ul>",
+      "css": ".ds-nav{list-style:none;margin:0;display:flex;flex-direction:column;gap:4px;padding:8px;border-radius:calc(var(--radius)*1.8);background:var(--card);box-shadow:0 1px 2px color-mix(in oklch,var(--shadow-ink) 7%,transparent),0 0 0 1px color-mix(in oklch,var(--foreground) 10%,transparent)}.ds-nav a{display:block;padding:8px 14px;border-radius:calc(var(--radius)*1.4);font-size:.875rem;font-weight:600;color:var(--muted-foreground);text-decoration:none}.ds-nav a:hover{background:var(--muted);color:var(--foreground)}.ds-nav a.on{background:var(--primary);color:var(--primary-foreground)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Cabin Window",
+    "overview": "The working pages are the same sky the landing opened, seen from the cabin: a pale, still sky band behind solid, opaque panels, under a floating header bar. A flight offer is a boarding pass, never a generic card.",
+    "keyCharacteristics": [
+      "Sky band at the top of every working page, hidden on landing and in print.",
+      "Opaque panels with 1px ring and soft panel shadow.",
+      "Boarding-pass FlightCard with notch cut-outs and dashed perforation.",
+      "Route line motif.",
+      "Logical layout; directional icons flip in RTL."
+    ],
+    "rules": [
+      {
+        "name": "The Cobalt For Action Rule",
+        "body": "Cobalt fills mark the thing to press or the thing that is current.",
+        "section": "colors"
+      },
+      {
+        "name": "The Colour Plus Word Rule",
+        "body": "Cheapest, peak, scarce and verdict states pair colour with words or an icon.",
+        "section": "colors"
+      },
+      {
+        "name": "The Numbers Line Up Rule",
+        "body": "Every price, time, count and date uses tabular numerals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Shadow Follows The Cut Rule",
+        "body": "Masked shapes draw edge and shadow on a wrapper with filter: drop-shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use semantic tokens only; pair state colour with words or an icon.",
+      "Do put an offer's primary action in the stub at the inline end.",
+      "Do keep panels opaque on the sky band."
+    ],
+    "donts": [
+      "Don't use cobalt fills for decoration or informational chips.",
+      "Don't nest bordered panels inside panels.",
+      "Don't use glass, glow, gradient text, side-stripe borders or bounce easing."
+    ]
+  }
+}

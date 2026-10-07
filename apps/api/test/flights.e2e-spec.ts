@@ -97,4 +97,38 @@ describe("flights (e2e)", () => {
       .expect(200);
     expect(Array.isArray(explore.body.data.destinations)).toBe(true);
   });
+
+  it("refuses routes that do not exist and says why", async () => {
+    // Imam Khomeini only flies abroad; two foreign cities are never connected
+    const domestic = await search({ origin: "IKA", destination: "MHD", date }).expect(400);
+    expect(JSON.stringify(domestic.body)).toContain("فقط پرواز خارجی");
+    await search({ origin: "DXB", destination: "IST", date }).expect(400);
+    await search({ origin: "IKA", destination: "IST", date }).expect(200);
+  });
+
+  it("builds trip ideas for a party, grouped into budget bands", async () => {
+    const server = app.getHttpServer();
+    const res = await request(server)
+      .get("/v1/deals/trips")
+      .query({ origin: "TEH", party: "family", scope: "domestic" })
+      .expect(200);
+    const { ideas, adults, children } = res.body.data;
+    expect([adults, children]).toEqual([2, 2]);
+    expect(ideas.length).toBeGreaterThan(0);
+    for (const idea of ideas) {
+      expect(idea.international).toBe(false);
+      expect(["saver", "balanced", "relaxed"]).toContain(idea.band);
+      expect(idea.totalForParty).toBeGreaterThan(idea.perPerson);
+    }
+    // Cheapest first
+    const totals = ideas.map((idea: { totalForParty: number }) => idea.totalForParty);
+    expect(totals).toEqual([...totals].sort((a: number, b: number) => a - b));
+
+    const none = await request(server)
+      .get("/v1/deals/trips")
+      .query({ origin: "IKA", party: "solo", scope: "domestic" })
+      .expect(200);
+    expect(none.body.data.ideas).toEqual([]);
+    expect(none.body.data.note).toContain("فقط پرواز خارجی");
+  });
 });

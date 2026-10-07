@@ -1,12 +1,19 @@
 import { z } from "zod";
 
 import { mobileSchema } from "../common/iran";
+import { DEFAULT_NATIONALITY, type NationalityCode } from "../common/nationalities";
 import type { FareBreakdown, PassengerType } from "../domain/fare";
 import type { RefundPolicy, RefundResult } from "../domain/refund";
 import { parseSeatNumber } from "../domain/seatmap";
 import { flightIdSchema } from "../flights/flight-id";
 import type { FlightSummaryDto } from "../flights/flights.schema";
-import { passengerIdentitySchema } from "../passengers/passengers.schema";
+import {
+  DUPLICATE_PASSENGER_MESSAGE,
+  nationalityCodeSchema,
+  passengerIdentityKey,
+  passengerIdentityObject,
+  refinePassengerIdentity,
+} from "../passengers/passengers.schema";
 import type { PaymentDto } from "../payments/payments.schema";
 
 export const BOOKING_STATUSES = ["PENDING_PAYMENT", "CONFIRMED", "CANCELLED", "EXPIRED"] as const;
@@ -32,10 +39,13 @@ export const bookingContactSchema = z.object({
 });
 export type BookingContactInput = z.infer<typeof bookingContactSchema>;
 
-export const bookingPassengerSchema = passengerIdentitySchema.extend({
-  /** Present when the identity came from the traveler vault. */
-  savedPassengerId: z.string().optional(),
-});
+export const bookingPassengerSchema = passengerIdentityObject
+  .extend({
+    nationality: nationalityCodeSchema.default(DEFAULT_NATIONALITY),
+    /** Present when the identity came from the traveler vault. */
+    savedPassengerId: z.string().optional(),
+  })
+  .superRefine(refinePassengerIdentity);
 export type BookingPassengerInput = z.infer<typeof bookingPassengerSchema>;
 
 export const createBookingSchema = z
@@ -47,15 +57,17 @@ export const createBookingSchema = z
     /** Grand total the traveller saw, rial; a mismatch means the fare changed (409 FARE_CHANGED). */
     quotedTotal: z.number().int().positive(),
     seatPreference: z.enum(SEAT_PREFERENCES).default("ANY"),
+    /**
+     * The traveller accepted that a passport with under six months left may be refused. Only
+     * meaningful when a passenger triggers that warning; the API rejects the booking otherwise.
+     */
+    passportValidityAcknowledged: z.boolean().default(false),
   })
   .superRefine((value, ctx) => {
-    const ids = new Set(value.passengers.map((passenger) => passenger.nationalId));
-    if (ids.size !== value.passengers.length) {
-      ctx.addIssue({
-        code: "custom",
-        message: "کد ملی مسافران نباید تکراری باشد",
-        path: ["passengers"],
-      });
+    // A passenger without the identifying field yet already has its own error; skip it here
+    const keys = value.passengers.map(passengerIdentityKey).filter((key) => key !== null);
+    if (new Set(keys).size !== keys.length) {
+      ctx.addIssue({ code: "custom", message: DUPLICATE_PASSENGER_MESSAGE, path: ["passengers"] });
     }
   });
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
@@ -106,8 +118,9 @@ export interface BookingPassengerDto {
   lastNameFa: string;
   firstNameEn: string;
   lastNameEn: string;
-  /** Masked: ******1234. */
-  nationalIdMasked: string;
+  nationality: NationalityCode;
+  /** Masked: ******1234. Null for foreigners, who have no national code. */
+  nationalIdMasked: string | null;
   passportNumberMasked: string | null;
   seats: Partial<Record<SliceDirection, string>>;
   tickets: Partial<Record<SliceDirection, string>>;

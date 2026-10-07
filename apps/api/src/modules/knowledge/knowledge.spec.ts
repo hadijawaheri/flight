@@ -1,4 +1,4 @@
-import { RULE_CATEGORIES } from "@flysmart/contracts";
+import { BOOKING_HOLD_MINUTES, MAX_ACTIVE_ALERTS, RULE_CATEGORIES } from "@flysmart/contracts";
 import { describe, expect, it } from "vitest";
 
 import { AppException } from "../../common/app-exception.js";
@@ -67,6 +67,7 @@ describe("retrieval", () => {
     ["مهلت پرداخت رزرو", "platform-booking-hold"],
     ["تحلیل قیمت چطور کار میکنه", "platform-price-analysis"],
     ["سفر با سگ", "pets-travel"],
+    ["آیا بلیت واقعی است", "platform-demo-notice"],
     // Found by browsing the live site: these used to land on the domestic-documents entry
     ["برای سفر به استانبول چه مدارکی لازم است؟", "docs-international"],
     ["برای سفر خارجی چه مدارکی لازم دارم", "docs-international"],
@@ -107,13 +108,65 @@ describe("rules listing", () => {
 describe("airport guide", () => {
   it("gives international airports a longer lead time and exit formalities", () => {
     const ika = service.airportGuide("IKA");
-    const ker = service.airportGuide("KER");
-    expect(ika.arrivalLeadMinutes).toBeGreaterThan(ker.arrivalLeadMinutes);
+    const buz = service.airportGuide("BUZ");
+    expect(ika.arrivalLeadMinutes).toBeGreaterThan(buz.arrivalLeadMinutes);
     expect(ika.relatedRules.some((rule) => rule.id === "intl-exit-formalities")).toBe(true);
-    expect(ker.relatedRules.some((rule) => rule.id === "intl-exit-formalities")).toBe(false);
+    expect(buz.relatedRules.some((rule) => rule.id === "intl-exit-formalities")).toBe(false);
+  });
+
+  it("uses the common 2 h / 3 h arrival and 45 / 60 min check-in closing times", () => {
+    const buz = service.airportGuide("BUZ");
+    const ika = service.airportGuide("IKA");
+    expect([buz.arrivalLeadMinutes, buz.checkInClosesMinutesBefore]).toEqual([120, 45]);
+    expect([ika.arrivalLeadMinutes, ika.checkInClosesMinutesBefore]).toEqual([180, 60]);
+  });
+
+  it("never describes domestic flights at an airport that has none", () => {
+    const ika = service.airportGuide("IKA");
+    expect(ika.international).toBe(true);
+    expect(ika.tips.join(" ")).not.toContain("داخلی همین فرودگاه");
+    expect(ika.tips.join(" ")).toContain("فقط پرواز خارجی");
+    expect(ika.tips[0]).toContain("خارجی");
+    expect(ika.tips[0]).not.toContain("داخلی");
+  });
+
+  it("covers both kinds at an airport that flies both and writes Persian digits", () => {
+    const mhd = service.airportGuide("MHD");
+    expect(mhd.tips[0]).toContain("خارجی");
+    expect(mhd.tips[0]).toContain("داخلی");
+    expect(mhd.tips[1]).toContain("۴۵ دقیقه (داخلی)");
+    for (const tip of mhd.tips) expect(tip).not.toMatch(/[0-9]/);
+  });
+
+  it("does not claim international flights at an airport that has none", () => {
+    const buz = service.airportGuide("BUZ");
+    expect(buz.international).toBe(false);
+    expect(buz.tips.join(" ")).not.toContain("گذرنامه");
   });
 
   it("rejects unknown airports", () => {
     expect(() => service.airportGuide("XXX")).toThrow(AppException);
+  });
+});
+
+describe("platform entries match the product", () => {
+  const faNumber = new Intl.NumberFormat("fa-IR");
+
+  it("states the seat hold the API really applies", () => {
+    expect(service.entry("platform-booking-hold")?.summary).toContain(
+      `${faNumber.format(BOOKING_HOLD_MINUTES)} دقیقه`,
+    );
+  });
+
+  it("states the active price-alert cap the API really enforces", () => {
+    expect(service.entry("platform-price-alerts")?.details.join(" ")).toContain(
+      `${faNumber.format(MAX_ACTIVE_ALERTS)} هشدار`,
+    );
+  });
+
+  it("says the product is a demo whose tickets are not real", () => {
+    const notice = service.entry("platform-demo-notice");
+    expect(notice?.reliability).toBe("STANDARD");
+    expect(notice?.summary).toContain("بلیت واقعی ایرلاین نیست");
   });
 });

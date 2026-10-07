@@ -19,4 +19,4 @@ export interface KnowledgeEntry {
 }
 
 /** Entries are authored from general aviation knowledge and still need review by a domain expert. */
-export const AUTHORED_ON = "2026-10-05";
+export const AUTHORED_ON = "2026-10-07";

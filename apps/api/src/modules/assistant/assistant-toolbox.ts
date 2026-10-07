@@ -8,6 +8,7 @@ import {
   isoDateSchema,
   locationLabel,
   RELIABILITY_LABELS,
+  routeProblem,
   searchFlightsQuerySchema,
   tomanToRial,
 } from "@flysmart/contracts";
@@ -26,6 +27,7 @@ import {
   excessBaggageCard,
   genericRefundCard,
   priceAdviceCard,
+  routeNetworkCard,
 } from "./cards.js";
 
 export interface ToolContext {
@@ -75,6 +77,9 @@ export const toolSchemas = {
     reason: z.enum(["VOLUNTARY", "AIRLINE_CANCELLED", "DELAY_OVER_2H"]).default("VOLUNTARY"),
   }),
   price_advice: z.object({ flight_id: flightIdSchema.optional() }),
+  route_network: z.object({
+    origin: z.string().trim().toUpperCase().refine(isKnownLocationCode, "فرودگاه ناشناخته است"),
+  }),
   cheapest_flights: z.object({
     origin: z.string().trim().toUpperCase().refine(isKnownLocationCode, "مبدأ ناشناخته است"),
     destination: z.string().trim().toUpperCase().refine(isKnownLocationCode, "مقصد ناشناخته است"),
@@ -153,6 +158,18 @@ export const LLM_TOOLS: LlmTool[] = [
     input_schema: { type: "object", properties: { flight_id: { type: "string" } } },
   },
   {
+    name: "route_network",
+    description:
+      "Which cities an airport flies to, split into domestic and international. Use it for questions like where can I fly from IKA / Mashhad, and before claiming a route exists. Imam Khomeini (IKA) has no domestic flights; Mehrabad (THR) is mostly domestic with a limited number of international routes.",
+    input_schema: {
+      type: "object",
+      properties: {
+        origin: { type: "string", description: "IATA code, or TEH for both Tehran airports" },
+      },
+      required: ["origin"],
+    },
+  },
+  {
     name: "cheapest_flights",
     description:
       "Cheapest bookable flights on a route and date. origin/destination are IATA codes (THR, MHD, IKA...), date is YYYY-MM-DD.",
@@ -202,6 +219,8 @@ export class AssistantToolbox {
           return await this.priceAdvice(input, context);
         case "cheapest_flights":
           return await this.cheapest(input);
+        case "route_network":
+          return this.routeNetwork(input);
       }
     } catch (error: unknown) {
       if (error instanceof AppException) return fail(error.message);
@@ -356,11 +375,25 @@ export class AssistantToolbox {
     };
   }
 
+  private routeNetwork(input: unknown): ToolOutcome {
+    const parsed = toolSchemas.route_network.safeParse(input);
+    if (!parsed.success) return fail(describeIssues(parsed.error));
+    const card = routeNetworkCard(parsed.data.origin);
+    return {
+      content: JSON.stringify({ title: card.title, rows: card.rows, note: card.note }),
+      isError: false,
+      card,
+      citationIds: [],
+    };
+  }
+
   private async cheapest(input: unknown): Promise<ToolOutcome> {
     const parsed = toolSchemas.cheapest_flights.safeParse(input);
     if (!parsed.success) return fail(describeIssues(parsed.error));
     const { origin, destination, date, cabin } = parsed.data;
     if (origin === destination) return fail("مبدأ و مقصد نباید یکسان باشند");
+    const problem = routeProblem(origin, destination);
+    if (problem) return fail(problem);
 
     // Parsing fills the schema's defaults so this stays in step with what HTTP callers get
     const result = await this.flights.search(

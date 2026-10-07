@@ -9,7 +9,7 @@ export interface Airport {
   cityEn: string;
   countryCode: string;
   countryFa: string;
-  /** Handles scheduled international passengers. */
+  /** Has scheduled international service; kept in step with the route network (see reference.test). */
   international: boolean;
   /** Fixed UTC offset in minutes (no DST modelled; correct for every airport listed). */
   utcOffsetMinutes: number;
@@ -29,7 +29,7 @@ export const AIRPORTS: readonly Airport[] = [
     cityFa: "تهران",
     cityEn: "Tehran",
     ...IR,
-    international: false,
+    international: true,
     lat: 35.6892,
     lon: 51.3134,
     aliases: ["tehran", "mehrabad"],
@@ -125,7 +125,7 @@ export const AIRPORTS: readonly Airport[] = [
     cityFa: "قشم",
     cityEn: "Qeshm",
     ...IR,
-    international: false,
+    international: true,
     lat: 26.7545,
     lon: 55.9024,
     aliases: ["qeshm", "gheshm"],
@@ -149,7 +149,7 @@ export const AIRPORTS: readonly Airport[] = [
     cityFa: "کرمان",
     cityEn: "Kerman",
     ...IR,
-    international: false,
+    international: true,
     lat: 30.2744,
     lon: 56.9511,
   },
@@ -160,7 +160,7 @@ export const AIRPORTS: readonly Airport[] = [
     cityFa: "رشت",
     cityEn: "Rasht",
     ...IR,
-    international: false,
+    international: true,
     lat: 37.3233,
     lon: 49.6178,
     aliases: ["rasht"],
@@ -183,7 +183,7 @@ export const AIRPORTS: readonly Airport[] = [
     cityFa: "ارومیه",
     cityEn: "Urmia",
     ...IR,
-    international: false,
+    international: true,
     lat: 37.6681,
     lon: 45.0687,
     aliases: ["orumiyeh", "urmia"],
@@ -195,7 +195,7 @@ export const AIRPORTS: readonly Airport[] = [
     cityFa: "یزد",
     cityEn: "Yazd",
     ...IR,
-    international: false,
+    international: true,
     lat: 31.9049,
     lon: 54.2765,
     aliases: ["yazd"],
@@ -630,6 +630,69 @@ export const AIRPORTS: readonly Airport[] = [
     lon: 50.0467,
     aliases: ["baku"],
   },
+  {
+    code: "JED",
+    nameFa: "ملک عبدالعزیز",
+    nameEn: "King Abdulaziz International",
+    cityFa: "جده",
+    cityEn: "Jeddah",
+    countryCode: "SA",
+    countryFa: "عربستان",
+    international: true,
+    utcOffsetMinutes: 180,
+    lat: 21.6796,
+    lon: 39.1565,
+    aliases: ["jeddah", "jidda", "mecca", "makkah", "مکه", "عمره", "حج", "عربستان سعودی"],
+  },
+  {
+    code: "MED",
+    nameFa: "شاهزاده محمد بن عبدالعزیز",
+    nameEn: "Prince Mohammad bin Abdulaziz",
+    cityFa: "مدینه",
+    cityEn: "Medina",
+    countryCode: "SA",
+    countryFa: "عربستان",
+    international: true,
+    utcOffsetMinutes: 180,
+    lat: 24.5534,
+    lon: 39.7051,
+    aliases: ["medina", "madinah", "مدینه منوره", "عمره", "حج", "عربستان سعودی"],
+  },
+  {
+    code: "SVO",
+    nameFa: "شرمتیوو",
+    nameEn: "Sheremetyevo",
+    cityFa: "مسکو",
+    cityEn: "Moscow",
+    countryCode: "RU",
+    countryFa: "روسیه",
+    international: true,
+    utcOffsetMinutes: 180,
+    lat: 55.9726,
+    lon: 37.4146,
+    aliases: ["moscow", "sheremetyevo", "moskva"],
+  },
+  {
+    code: "LED",
+    nameFa: "پولکوو",
+    nameEn: "Pulkovo",
+    cityFa: "سن‌پترزبورگ",
+    cityEn: "Saint Petersburg",
+    countryCode: "RU",
+    countryFa: "روسیه",
+    international: true,
+    utcOffsetMinutes: 180,
+    lat: 59.8003,
+    lon: 30.2625,
+    aliases: [
+      "st petersburg",
+      "saint petersburg",
+      "petersburg",
+      "pulkovo",
+      "peterburg",
+      "پترزبورگ",
+    ],
+  },
 ];
 
 /** City-level search groups: one search over several airports of the same city. */
@@ -727,11 +790,18 @@ const HAYSTACKS = new Map(AIRPORTS.map((airport) => [airport.code, haystack(airp
  * Offline airport autocomplete: code prefix and city prefix rank first, then any substring.
  * Runs in the browser, no API call per keystroke.
  */
-export function searchAirports(query: string, limit = 8): AirportSearchHit[] {
+export function searchAirports(
+  query: string,
+  limit = 8,
+  /** When given, only these airport codes (and groups that contain one) are offered. */
+  allowed?: readonly string[],
+): AirportSearchHit[] {
   const needle = normalizeText(query);
+  const permitted = allowed ? new Set(allowed.map((code) => code.toUpperCase())) : null;
   const hits: Array<{ hit: AirportSearchHit; score: number }> = [];
 
   for (const group of AIRPORT_GROUPS) {
+    if (permitted && !group.airports.some((code) => permitted.has(code))) continue;
     const text = normalizeText(`${group.code} ${group.nameFa} ${group.nameEn}`);
     if (needle === "" || text.includes(needle)) {
       hits.push({
@@ -748,6 +818,7 @@ export function searchAirports(query: string, limit = 8): AirportSearchHit[] {
   }
 
   for (const airport of AIRPORTS) {
+    if (permitted && !permitted.has(airport.code)) continue;
     const text = HAYSTACKS.get(airport.code) ?? "";
     if (needle !== "" && !text.includes(needle)) continue;
     let score = 5;
@@ -765,7 +836,10 @@ export function searchAirports(query: string, limit = 8): AirportSearchHit[] {
       hit: {
         code: airport.code,
         kind: "airport",
-        label: `${airport.cityFa} (${airport.nameFa})`,
+        label:
+          airport.nameFa === airport.cityFa
+            ? airport.cityFa
+            : `${airport.cityFa} (${airport.nameFa})`,
         sublabel: `${airport.code} · ${airport.countryFa}`,
         countryCode: airport.countryCode,
       },

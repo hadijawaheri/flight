@@ -11,11 +11,26 @@ export type FlightType = (typeof FLIGHT_TYPES)[number];
  * provider returns per-passenger prices and this table is then only used for previews.
  */
 export const FARE_POLICY = {
-  /** Child (2–11) share of the adult base fare. */
-  childFactor: { SYSTEMIC: 0.75, CHARTER: 1 } satisfies Record<FlightType, number>,
-  /** Infant (under 2, no seat) share of the adult base fare. */
+  /**
+   * Child (2–11) share of the adult base fare. Domestic scheduled carriers usually sell half-price
+   * child tickets (Mahan sells 75%); international child fares are airline-specific with ~75% the
+   * common value (IATA sets no figure); charter children pay the adult fare.
+   */
+  childFactor: {
+    SYSTEMIC: { domestic: 0.5, international: 0.75 },
+    CHARTER: { domestic: 1, international: 1 },
+  } satisfies Record<FlightType, { domestic: number; international: number }>,
+  /** Infant (under 2, no seat) share of the adult base fare; carriers range from ~10% to ~25%. */
   infantFactor: 0.1,
-  airportTaxRial: { domestic: 1_500_000, international: 6_000_000 },
+  /**
+   * Placeholder aggregates for the simulation, not official charge rates. `airportTaxRial` is the
+   * airport/airline-side charge on every ticket; `exitLevyRial` is the government departure levy,
+   * which applies only to departures from Iran and to every traveller including infants.
+   */
+  airportTaxRial: { domestic: 1_500_000, international: 3_500_000 },
+  exitLevyRial: 2_500_000,
+  /** Share of the airport charge an infant pays on international tickets (IATA-style 10%). */
+  infantAirportTaxShare: 0.1,
   insuranceRial: 200_000,
   serviceFeePercent: 0.8,
   serviceFeeMinRial: 500_000,
@@ -33,6 +48,8 @@ export interface FareQuoteInput {
   adultBaseFare: number;
   flightType: FlightType;
   international: boolean;
+  /** False for flights that start abroad: Iran's exit levy is not charged there. Defaults to true. */
+  departsFromIran?: boolean;
   passengerTypes: readonly PassengerType[];
 }
 
@@ -73,9 +90,17 @@ export function validatePassengerMix(counts: PassengerCounts): string | null {
   return null;
 }
 
-function baseFareFor(type: PassengerType, adultBaseFare: number, flightType: FlightType): number {
+function baseFareFor(
+  type: PassengerType,
+  adultBaseFare: number,
+  flightType: FlightType,
+  international: boolean,
+): number {
   if (type === "ADULT") return adultBaseFare;
-  if (type === "CHILD") return roundRial(adultBaseFare * FARE_POLICY.childFactor[flightType]);
+  if (type === "CHILD") {
+    const factors = FARE_POLICY.childFactor[flightType];
+    return roundRial(adultBaseFare * (international ? factors.international : factors.domestic));
+  }
   return roundRial(adultBaseFare * FARE_POLICY.infantFactor);
 }
 
@@ -84,10 +109,19 @@ export function buildFareBreakdown(input: FareQuoteInput): FareBreakdown {
     ? FARE_POLICY.airportTaxRial.international
     : FARE_POLICY.airportTaxRial.domestic;
 
+  const exitLevy =
+    input.international && (input.departsFromIran ?? true) ? FARE_POLICY.exitLevyRial : 0;
+
   const perPassenger = input.passengerTypes.map<PassengerFare>((type) => {
-    const baseFare = baseFareFor(type, input.adultBaseFare, input.flightType);
-    // Infants occupy no seat: no airport charge or insurance, a small service fee only.
-    const taxes = type === "INFANT" ? 0 : airportTax + FARE_POLICY.insuranceRial;
+    const baseFare = baseFareFor(type, input.adultBaseFare, input.flightType, input.international);
+    // An infant pays no insurance and, abroad, a tenth of the airport charge; the exit levy has no
+    // age exemption. Domestic infants pay no airport tax (simplification: carriers differ).
+    const taxes =
+      type === "INFANT"
+        ? input.international
+          ? roundRial(airportTax * FARE_POLICY.infantAirportTaxShare) + exitLevy
+          : 0
+        : airportTax + exitLevy + FARE_POLICY.insuranceRial;
     const serviceFee = Math.max(
       type === "INFANT" ? 0 : FARE_POLICY.serviceFeeMinRial,
       percentOf(baseFare, FARE_POLICY.serviceFeePercent),

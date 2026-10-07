@@ -4,11 +4,18 @@ import type {
   FareBreakdown,
   FlightSummaryDto,
   Gender,
+  NationalityCode,
   PassengerType,
   RefundPolicy,
   SliceDirection,
 } from "@flysmart/contracts";
-import { BOOKING_STATUSES, CABINS, GENDERS, SLICE_DIRECTIONS } from "@flysmart/contracts";
+import {
+  BOOKING_STATUSES,
+  CABINS,
+  GENDERS,
+  NATIONALITY_CODES,
+  SLICE_DIRECTIONS,
+} from "@flysmart/contracts";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
 import { Types } from "mongoose";
@@ -52,10 +59,11 @@ export class BookingPassenger {
   @Prop({ type: String, default: null })
   savedPassengerId!: string | null;
 
-  @Prop({ type: String, required: true })
+  // Empty for a foreigner who gave no Persian name
+  @Prop({ type: String, default: "" })
   firstNameFa!: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, default: "" })
   lastNameFa!: string;
 
   @Prop({ type: String, required: true })
@@ -64,8 +72,13 @@ export class BookingPassenger {
   @Prop({ type: String, required: true })
   lastNameEn!: string;
 
-  @Prop({ type: String, required: true })
-  nationalId!: string;
+  // Absent on bookings made before foreigners were supported: those passengers are Iranian
+  @Prop({ type: String, enum: NATIONALITY_CODES, default: "IR" })
+  nationality?: NationalityCode;
+
+  // Null for foreigners, who identify with a passport instead
+  @Prop({ type: String, default: null })
+  nationalId!: string | null;
 
   @Prop({ type: String, required: true })
   birthDate!: string;
@@ -132,6 +145,10 @@ export class Booking {
     nonRefundableFees: number;
     processedAt: Date;
   } | null;
+
+  // Evidence that the traveller accepted a passport valid for under six months after the trip
+  @Prop({ type: Boolean, default: false })
+  passportValidityAcknowledged!: boolean;
 
   // Denormalised so "upcoming trips" is a single indexed query
   @Prop({ type: Date, required: true })

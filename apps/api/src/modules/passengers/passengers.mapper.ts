@@ -1,4 +1,5 @@
 import type { PassengerDto } from "@flysmart/contracts";
+import { DEFAULT_NATIONALITY } from "@flysmart/contracts";
 
 import type { Passenger } from "./schemas/passenger.schema.js";
 
@@ -9,6 +10,7 @@ export function toPassengerDto(passenger: Passenger): PassengerDto {
     lastNameFa: passenger.lastNameFa,
     firstNameEn: passenger.firstNameEn,
     lastNameEn: passenger.lastNameEn,
+    nationality: passenger.nationality ?? DEFAULT_NATIONALITY,
     nationalId: passenger.nationalId,
     birthDate: passenger.birthDate,
     gender: passenger.gender,

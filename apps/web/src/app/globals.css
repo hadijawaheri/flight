@@ -13,6 +13,13 @@
   --color-warning-ink: var(--warning-ink);
   --color-brand-soft: var(--brand-soft);
   --color-brand-ink: var(--brand-ink);
+  --color-night: var(--night);
+  --color-night-ink: var(--night-ink);
+  --color-night-ink-muted: var(--night-ink-muted);
+  --color-plane-body: var(--plane-body);
+  --color-plane-shade: var(--plane-shade);
+  --color-plane-glass: var(--plane-glass);
+  --color-plane-livery: var(--plane-livery);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -51,6 +58,13 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Panels sit on the sky, so they carry a real offset and blur rather than only a hairline */
+  --shadow-panel:
+    0 1px 2px color-mix(in oklch, var(--shadow-ink) 7%, transparent),
+    0 10px 28px -14px color-mix(in oklch, var(--shadow-ink) 22%, transparent);
+  --shadow-lift:
+    0 2px 4px color-mix(in oklch, var(--shadow-ink) 8%, transparent),
+    0 18px 36px -16px color-mix(in oklch, var(--shadow-ink) 30%, transparent);
 }
 
 :root {
@@ -80,6 +94,15 @@
   --brand-soft: oklch(0.95 0.03 255);
   --brand-ink: oklch(0.4 0.18 258);
 
+  /* The landing's night section and the airliner keep their own light in both themes */
+  --night: oklch(0.17 0.05 265);
+  --night-ink: oklch(0.97 0.01 245);
+  --night-ink-muted: oklch(0.8 0.03 250);
+  --plane-body: oklch(0.985 0.005 245);
+  --plane-shade: oklch(0.86 0.02 250);
+  --plane-glass: oklch(0.24 0.05 262);
+  --plane-livery: oklch(0.37 0.14 263);
+
   --border: oklch(0.91 0.015 245);
   --input: oklch(0.89 0.02 245);
   --ring: oklch(0.53 0.22 255);
@@ -90,7 +113,16 @@
   --chart-4: oklch(0.65 0.2 310);
   --chart-5: oklch(0.4 0.1 250);
 
-  --radius: 0.875rem;
+  --radius: 0.75rem;
+
+  /* The sky band behind every working page: the landing's morning, pale enough that dark type reads on it */
+  --shadow-ink: oklch(0.16 0.04 255);
+  --sky-band-top: oklch(0.89 0.065 240);
+  --sky-band-mid: oklch(0.945 0.035 240);
+  --sky-cloud: oklch(1 0 0);
+  --sky-cloud-o: 0.75;
+  --ticket-edge: oklch(0.16 0.04 255 / 0.28);
+  --ticket-stub: oklch(0.975 0.014 245);
 
   --sidebar: oklch(0.98 0.01 245);
   --sidebar-foreground: oklch(0.16 0.04 255);
@@ -138,6 +170,14 @@
   --chart-4: oklch(0.7 0.18 315);
   --chart-5: oklch(0.5 0.12 250);
 
+  --shadow-ink: oklch(0 0 0);
+  --sky-band-top: oklch(0.31 0.095 258);
+  --sky-band-mid: oklch(0.2 0.055 260);
+  --sky-cloud: oklch(0.62 0.07 250);
+  --sky-cloud-o: 0.28;
+  --ticket-edge: oklch(0.98 0.005 240 / 0.2);
+  --ticket-stub: oklch(0.2 0.04 256);
+
   --sidebar: oklch(0.15 0.03 260);
   --sidebar-foreground: oklch(0.98 0.005 240);
   --sidebar-primary: oklch(0.68 0.19 245);
@@ -163,6 +203,15 @@
   .tnum {
     font-variant-numeric: tabular-nums;
   }
+  html {
+    caret-color: var(--primary);
+    accent-color: var(--primary);
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
   ::selection {
     background-color: color-mix(in oklch, var(--primary) 22%, transparent);
     color: inherit;
@@ -177,6 +226,250 @@
   ::-webkit-scrollbar-thumb {
     background: color-mix(in oklch, var(--primary) 22%, transparent);
     border-radius: 9999px;
+  }
+}
+
+/*
+ * The working pages' sky: the landing's morning, held still behind a band at the top of the page.
+ * It is a ground, not content, so it fades into the page colour and the landing (which paints its
+ * own full-screen sky) hides it.
+ */
+.app-sky {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: -1;
+  height: 34rem;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 30rem 7rem at 84% 9rem,
+      color-mix(in oklch, var(--sky-cloud) calc(var(--sky-cloud-o) * 100%), transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 22rem 5rem at 66% 12.5rem,
+      color-mix(in oklch, var(--sky-cloud) calc(var(--sky-cloud-o) * 80%), transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 26rem 6rem at 10% 16rem,
+      color-mix(in oklch, var(--sky-cloud) calc(var(--sky-cloud-o) * 90%), transparent),
+      transparent 72%
+    ),
+    linear-gradient(to bottom, var(--sky-band-top), var(--sky-band-mid) 58%, var(--background));
+}
+
+html:has([data-journey-root]) .app-sky {
+  display: none;
+}
+
+@media print {
+  .app-sky {
+    display: none;
+  }
+}
+
+/*
+ * A flight offer is a boarding pass. From md the stub (price and action) sits at the inline end,
+ * cut off from the body by a perforation with a half-circle notch at each end. The notches are
+ * real cut-outs (a mask), so the sky shows through them; because a mask would also clip a shadow,
+ * the wrapper draws the outline and the shadow with filter, which follows the cut-out.
+ */
+.ticket-wrap {
+  filter: drop-shadow(0 0 0.5px var(--ticket-edge))
+    drop-shadow(0 12px 14px color-mix(in oklch, var(--shadow-ink) 9%, transparent));
+  transition: filter 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ticket-wrap:hover,
+.ticket-wrap:focus-within {
+  filter: drop-shadow(0 0 0.5px var(--ticket-edge))
+    drop-shadow(0 16px 20px color-mix(in oklch, var(--shadow-ink) 16%, transparent));
+}
+
+.ticket {
+  --stub: 13.5rem;
+  --notch: 0.7rem;
+  --cut: var(--stub);
+  border-radius: var(--radius-2xl, 1.35rem);
+  background: var(--card);
+}
+
+[dir="rtl"] .ticket {
+  --cut: var(--stub);
+}
+
+[dir="ltr"] .ticket {
+  --cut: calc(100% - var(--stub));
+}
+
+@media (min-width: 48rem) {
+  .ticket {
+    mask:
+      radial-gradient(
+          circle var(--notch) at var(--cut) 0,
+          #0000 calc(var(--notch) - 0.5px),
+          #000 var(--notch)
+        )
+        top / 100% 51% no-repeat,
+      radial-gradient(
+          circle var(--notch) at var(--cut) 100%,
+          #0000 calc(var(--notch) - 0.5px),
+          #000 var(--notch)
+        )
+        bottom / 100% 51% no-repeat;
+  }
+}
+
+.ticket-stub {
+  background: var(--ticket-stub);
+}
+
+/*
+ * The landing's flight day. The sky is a physical scene, so left/right and the sun's travel here
+ * are the screen's, not the reading direction's; the engine writes the --sky-* variables per frame.
+ */
+.journey {
+  /* Scopes the fixed sky to the landing so it never paints behind the footer */
+  clip-path: inset(0);
+}
+
+.journey-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+}
+
+.journey-sky {
+  position: absolute;
+  inset: 0;
+  /* Before the engine's first frame: a clear morning, the same five-stop gradient the engine keeps writing */
+  --sky-0: rgb(96 148 226);
+  --sky-1: rgb(142 178 234);
+  --sky-2: rgb(190 212 241);
+  --sky-3: rgb(222 230 240);
+  --sky-4: rgb(236 233 227);
+  background: linear-gradient(
+    to bottom,
+    var(--sky-0) 0%,
+    var(--sky-1) 25%,
+    var(--sky-2) 50%,
+    var(--sky-3) 75%,
+    var(--sky-4) 100%
+  );
+}
+
+.dark .journey-sky {
+  --sky-0: rgb(24 52 120);
+  --sky-1: rgb(40 72 138);
+  --sky-2: rgb(58 88 150);
+  --sky-3: rgb(72 100 152);
+  --sky-4: rgb(80 106 154);
+}
+
+/* The sun is only ever its own light scattered through haze: a hot core inside a wide, soft glow */
+.journey-sun {
+  position: absolute;
+  left: var(--sun-x, 78%);
+  top: var(--sun-y, 70%);
+  width: max(80vmin, 40rem);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 248 232 / 0.95) 0 1.1%,
+    rgb(255 232 188 / 0.55) 3.5%,
+    rgb(255 214 160 / 0.2) 18%,
+    transparent 60%
+  );
+  opacity: var(--sun-o, 0);
+}
+
+.journey-stars {
+  position: absolute;
+  inset: 0;
+  opacity: var(--star-o, 0);
+}
+
+.journey-star {
+  fill: oklch(0.98 0.01 250);
+  animation: journey-twinkle 3.6s ease-in-out infinite;
+}
+
+@keyframes journey-twinkle {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Soft clouds for devices without WebGL; the WebGL sky paints its own */
+.journey-clouds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  --cloud: rgb(255 255 255);
+}
+
+.journey-cloud {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  aspect-ratio: 2.4;
+  opacity: 0;
+  filter: blur(9px);
+  background:
+    radial-gradient(ellipse 34% 40% at 28% 62%, var(--cloud) 40%, transparent 100%),
+    radial-gradient(ellipse 30% 46% at 52% 50%, var(--cloud) 40%, transparent 100%),
+    radial-gradient(ellipse 28% 38% at 74% 60%, var(--cloud) 40%, transparent 100%),
+    radial-gradient(ellipse 52% 22% at 50% 78%, var(--cloud) 30%, transparent 100%);
+}
+
+/* The SVG airliner stands in until WebGL has drawn its first frame, and for lite and still tiers */
+.journey-plane {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+}
+
+.journey-plane > * {
+  grid-area: 1 / 1;
+  width: 100%;
+}
+
+.journey[data-tier="full"][data-scene="ready"] .journey-plane,
+.journey[data-tier="full"][data-scene="ready"] .journey-clouds {
+  display: none;
+}
+
+/* Sections settle into place as they scroll in; transform only, so copy is never faded or hidden */
+@keyframes journey-rise {
+  from {
+    transform: translateY(2.5rem) scale(0.985);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: journey-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+
+  html:has([data-journey-root]) {
+    scroll-behavior: smooth;
   }
 }
 

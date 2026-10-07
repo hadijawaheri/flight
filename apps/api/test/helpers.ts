@@ -57,6 +57,26 @@ export function adultPassenger(overrides: Record<string, unknown> = {}): Record<
   };
 }
 
+/** A birth date that makes the passenger this many whole years old for the next weeks. */
+export function birthDateYearsAgo(years: number): string {
+  return addDaysIso(tehranToday(), -Math.round(years * 365.25) - 30);
+}
+
+/** A non-Iranian traveller: identified by passport, with no national code or Persian names. */
+export function foreignPassenger(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  passengerCounter += 1;
+  return {
+    firstNameEn: "John",
+    lastNameEn: "Smith",
+    nationality: "DE",
+    birthDate: "1985-03-02",
+    gender: "MALE",
+    passportNumber: `P${String(Date.now()).slice(-6)}${String(passengerCounter).padStart(2, "0")}`,
+    passportExpiry: addDaysIso(tehranToday(), 3650),
+    ...overrides,
+  };
+}
+
 export type Agent = ReturnType<typeof request.agent>;
 
 export async function signedInAgent(
@@ -78,7 +98,14 @@ export interface FoundOffer {
 
 export async function firstOffer(
   app: NestExpressApplication,
-  route: { origin: string; destination: string; date: string },
+  route: {
+    origin: string;
+    destination: string;
+    date: string;
+    adults?: number;
+    children?: number;
+    infants?: number;
+  },
 ): Promise<FoundOffer> {
   const res = await request(app.getHttpServer())
     .get("/v1/flights/search")

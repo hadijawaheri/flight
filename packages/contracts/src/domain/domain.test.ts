@@ -72,11 +72,21 @@ describe("fare breakdown", () => {
       international: false,
       passengerTypes: ["CHILD"],
     });
-    expect(systemic.perPassenger[0]?.baseFare).toBe(30_000_000);
+    expect(systemic.perPassenger[0]?.baseFare).toBe(20_000_000);
     expect(charter.perPassenger[0]?.baseFare).toBe(40_000_000);
   });
 
-  it("charges an infant a tenth of the fare and no taxes", () => {
+  it("gives an international systemic child a smaller discount than a domestic one", () => {
+    const abroad = buildFareBreakdown({
+      adultBaseFare: 40_000_000,
+      flightType: "SYSTEMIC",
+      international: true,
+      passengerTypes: ["CHILD"],
+    });
+    expect(abroad.perPassenger[0]?.baseFare).toBe(30_000_000);
+  });
+
+  it("charges a domestic infant a tenth of the fare and no taxes", () => {
     const fare = buildFareBreakdown({
       adultBaseFare: 40_000_000,
       flightType: "SYSTEMIC",
@@ -87,7 +97,7 @@ describe("fare breakdown", () => {
     expect(fare.perPassenger[0]?.taxes).toBe(0);
   });
 
-  it("uses the international airport charge", () => {
+  it("adds the airport charge and the exit levy on an international departure from Iran", () => {
     const domestic = buildFareBreakdown({
       adultBaseFare: 50_000_000,
       flightType: "SYSTEMIC",
@@ -101,7 +111,39 @@ describe("fare breakdown", () => {
       passengerTypes: ["ADULT"],
     });
     expect(abroad.taxTotal - domestic.taxTotal).toBe(
-      FARE_POLICY.airportTaxRial.international - FARE_POLICY.airportTaxRial.domestic,
+      FARE_POLICY.airportTaxRial.international +
+        FARE_POLICY.exitLevyRial -
+        FARE_POLICY.airportTaxRial.domestic,
+    );
+  });
+
+  it("charges no exit levy on a flight that starts abroad", () => {
+    const outbound = buildFareBreakdown({
+      adultBaseFare: 50_000_000,
+      flightType: "SYSTEMIC",
+      international: true,
+      passengerTypes: ["ADULT"],
+    });
+    const inbound = buildFareBreakdown({
+      adultBaseFare: 50_000_000,
+      flightType: "SYSTEMIC",
+      international: true,
+      departsFromIran: false,
+      passengerTypes: ["ADULT"],
+    });
+    expect(outbound.taxTotal - inbound.taxTotal).toBe(FARE_POLICY.exitLevyRial);
+  });
+
+  it("makes an international infant pay the exit levy and a tenth of the airport charge", () => {
+    const fare = buildFareBreakdown({
+      adultBaseFare: 50_000_000,
+      flightType: "SYSTEMIC",
+      international: true,
+      passengerTypes: ["INFANT"],
+    });
+    expect(fare.perPassenger[0]?.taxes).toBe(
+      FARE_POLICY.airportTaxRial.international * FARE_POLICY.infantAirportTaxShare +
+        FARE_POLICY.exitLevyRial,
     );
   });
 
@@ -176,9 +218,11 @@ describe("refund", () => {
 
   it("is stricter on charter flights", () => {
     const charter = refundPolicyFor("CHARTER", "STANDARD");
-    expect(
-      calculateRefund({ ...paid, policy: charter, hoursBeforeDeparture: 10 }).penaltyPercent,
-    ).toBe(100);
+    const penaltyAt = (hours: number): number =>
+      calculateRefund({ ...paid, policy: charter, hoursBeforeDeparture: hours }).penaltyPercent;
+    expect(penaltyAt(100)).toBe(50);
+    expect(penaltyAt(48)).toBe(80);
+    expect(penaltyAt(10)).toBe(100);
   });
 });
 
@@ -213,6 +257,17 @@ describe("batteries", () => {
     expect(evaluateBattery({ wattHours: 100.1, spare: true }).verdict).toBe("NEEDS_APPROVAL");
     expect(evaluateBattery({ wattHours: 160, spare: true }).verdict).toBe("NEEDS_APPROVAL");
     expect(evaluateBattery({ wattHours: 160.1, spare: true }).verdict).toBe("FORBIDDEN");
+  });
+
+  it("caps loose 100-160 Wh batteries at two but not installed ones", () => {
+    expect(evaluateBattery({ wattHours: 120, spare: true }).maxPerPassenger).toBe(2);
+    expect(evaluateBattery({ wattHours: 120, spare: false }).maxPerPassenger).toBeNull();
+  });
+
+  it("states the two-power-bank cap and the no-recharge rule for allowed spares", () => {
+    const message = evaluateBattery({ wattHours: 50, spare: true }).message;
+    expect(message).toContain("دو پاوربانک");
+    expect(message).toContain("شارژ");
   });
 
   it("keeps spare batteries in the cabin", () => {

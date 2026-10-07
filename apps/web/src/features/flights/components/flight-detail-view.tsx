@@ -1,7 +1,7 @@
 "use client";
 
 import { parseFlightId } from "@flysmart/contracts";
-import { ArrowLeftIcon, ChevronLeftIcon, LuggageIcon, UtensilsIcon } from "lucide-react";
+import { ChevronLeftIcon, LuggageIcon, UtensilsIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -29,6 +29,7 @@ import { FareBreakdownTable } from "./fare-breakdown";
 import { InsightBadge } from "./insight-badge";
 import { PriceAnalysisPanel } from "./price-analysis-panel";
 import { RefundPolicyList } from "./refund-policy";
+import { RouteLine } from "./route-line";
 
 interface FlightDetailViewProps {
   flightId: string;
@@ -48,8 +49,8 @@ export function FlightDetailView({ flightId, trip, party, outboundId }: FlightDe
   if (isPending) {
     return (
       <div className="flex flex-col gap-4" role="status" aria-label="در حال بارگذاری پرواز">
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
@@ -81,7 +82,7 @@ export function FlightDetailView({ flightId, trip, party, outboundId }: FlightDe
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
       <div className="flex min-w-0 flex-col gap-6">
-        <Button asChild variant="ghost" className="w-fit">
+        <Button asChild variant="outline" className="w-fit">
           <Link href={resultsHref}>
             <ChevronLeftIcon data-icon="inline-start" className="rtl:rotate-180" />
             بازگشت به نتایج
@@ -91,7 +92,7 @@ export function FlightDetailView({ flightId, trip, party, outboundId }: FlightDe
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <CardTitle className="text-lg">{offer.airline.nameFa}</CardTitle>
+              <CardTitle className="text-xl">{offer.airline.nameFa}</CardTitle>
               <span className="text-muted-foreground tnum" dir="ltr">
                 {offer.flightNumber}
               </span>
@@ -112,26 +113,25 @@ export function FlightDetailView({ flightId, trip, party, outboundId }: FlightDe
             <div className="flex items-center gap-4">
               <Point
                 time={offer.origin.localTime}
+                code={offer.origin.airportCode}
                 city={offer.origin.cityFa}
                 airport={offer.origin.airportNameFa}
               />
-              <div className="text-muted-foreground flex min-w-20 flex-1 flex-col items-center gap-1 text-xs">
-                <span>{formatDuration(offer.durationMinutes)}</span>
-                <div className="flex w-full items-center gap-1">
-                  <span className="bg-border h-px flex-1" />
-                  <ArrowLeftIcon className="size-3.5" aria-hidden="true" />
-                </div>
+              <div className="text-muted-foreground flex min-w-20 flex-1 flex-col items-center gap-2 text-xs">
+                <span className="tnum">{formatDuration(offer.durationMinutes)}</span>
+                <RouteLine />
                 <span>بدون توقف</span>
               </div>
               <Point
                 time={offer.destination.localTime}
+                code={offer.destination.airportCode}
                 city={offer.destination.cityFa}
                 airport={offer.destination.airportNameFa}
                 end
               />
             </div>
 
-            <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <dl className="bg-muted/60 grid grid-cols-2 gap-4 rounded-xl p-4 text-sm sm:grid-cols-3">
               <Fact label="هواپیما" value={offer.aircraft.nameFa} />
               <Fact label="نوع نرخ" value={FARE_FAMILY_LABELS[offer.fareFamily]} />
               <Fact
@@ -189,10 +189,10 @@ export function FlightDetailView({ flightId, trip, party, outboundId }: FlightDe
         />
       </div>
 
-      <aside className="lg:sticky lg:top-20 lg:self-start" aria-label="خلاصه‌ی قیمت">
+      <aside className="lg:sticky lg:top-24 lg:self-start" aria-label="خلاصه‌ی قیمت">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">خلاصه‌ی قیمت</CardTitle>
+            <CardTitle className="text-xl">خلاصه‌ی قیمت</CardTitle>
             <InsightBadge insight={offer.insight} detailed />
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -213,20 +213,27 @@ export function FlightDetailView({ flightId, trip, party, outboundId }: FlightDe
 
 function Point({
   time,
+  code,
   city,
   airport,
   end,
 }: {
   time: string;
+  code: string;
   city: string;
   airport: string;
   end?: boolean;
 }) {
   return (
     <div className={end ? "flex flex-col items-end" : "flex flex-col"}>
-      <span className="tnum text-3xl font-extrabold">{formatClock(time)}</span>
-      <span className="font-medium">{city}</span>
-      <span className="text-muted-foreground text-xs">{airport}</span>
+      <span className="tnum text-4xl leading-none font-black">{formatClock(time)}</span>
+      <span className="mt-2 font-semibold">{city}</span>
+      <span className="text-muted-foreground text-xs">
+        {airport} ·{" "}
+        <bdi className="tnum tracking-widest" dir="ltr">
+          {code}
+        </bdi>
+      </span>
     </div>
   );
 }
@@ -235,7 +242,7 @@ function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+      <dd className="font-semibold">{value}</dd>
     </div>
   );
 }

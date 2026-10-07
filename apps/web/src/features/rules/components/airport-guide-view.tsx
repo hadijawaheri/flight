@@ -20,7 +20,13 @@ export function AirportGuideView({ guide }: { guide: AirportGuideDto }) {
           <Badge variant="outline" className="tnum" dir="ltr">
             {guide.code}
           </Badge>
-          <Badge variant="secondary">{guide.international ? "بین‌المللی" : "داخلی"}</Badge>
+          <Badge variant="secondary">
+            {guide.international && guide.domestic
+              ? "داخلی و خارجی"
+              : guide.international
+                ? "فقط خارجی"
+                : "داخلی"}
+          </Badge>
         </div>
         <p className="text-muted-foreground text-sm" dir="ltr">
           {guide.nameEn} · {guide.cityFa}، {guide.countryFa}

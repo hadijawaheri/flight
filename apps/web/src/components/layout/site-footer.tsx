@@ -7,12 +7,12 @@ import { SITE_NAME } from "@/lib/seo";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t print:hidden">
+    <footer className="bg-night text-night-ink border-night-ink/10 mt-20 border-t print:hidden">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex max-w-sm flex-col gap-2">
             <Logo />
-            <p className="text-muted-foreground text-sm">
+            <p className="text-night-ink-muted text-sm">
               بلیت هواپیما را با اطمینان بخرید: قیمت را تحلیل می‌کنیم و قوانین پرواز را برایتان ساده
               می‌کنیم.
             </p>
@@ -21,28 +21,28 @@ export function SiteFooter() {
             aria-label="پیوندهای پایین صفحه"
             className="grid grid-cols-2 gap-x-10 gap-y-2 text-sm"
           >
-            <Link href={paths.flights} className="hover:underline">
+            <Link href={paths.flights} className="underline-offset-4 hover:underline">
               جست‌وجوی پرواز
             </Link>
-            <Link href={paths.rules} className="hover:underline">
+            <Link href={paths.rules} className="underline-offset-4 hover:underline">
               قوانین پرواز
             </Link>
-            <Link href={paths.deals} className="hover:underline">
+            <Link href={paths.deals} className="underline-offset-4 hover:underline">
               پیشنهاد ویژه
             </Link>
-            <Link href={paths.assistant} className="hover:underline">
+            <Link href={paths.assistant} className="underline-offset-4 hover:underline">
               دستیار هوشمند
             </Link>
-            <Link href={paths.explore} className="hover:underline">
+            <Link href={paths.explore} className="underline-offset-4 hover:underline">
               کجا بروم؟
             </Link>
-            <Link href={paths.bookings} className="hover:underline">
+            <Link href={paths.bookings} className="underline-offset-4 hover:underline">
               سفرهای من
             </Link>
           </nav>
         </div>
-        <Separator />
-        <p className="text-muted-foreground text-xs">
+        <Separator className="bg-night-ink/15" />
+        <p className="text-night-ink-muted text-xs">
           {SITE_NAME} نسخه‌ی نمایشی است: پروازها و قیمت‌ها شبیه‌سازی شده‌اند و پرداخت واقعی انجام
           نمی‌شود.
         </p>

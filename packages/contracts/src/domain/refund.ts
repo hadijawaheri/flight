@@ -20,16 +20,21 @@ export interface RefundPolicy {
 
 /**
  * Simulated fare-family rules in the shape Iranian airlines publish them: a stepped penalty on the
- * base fare by time before departure. Real values depend on airline and booking class (letter).
+ * base fare by time before departure. Real values depend on airline and booking class (letter), and
+ * real tables cut bands at "noon three days / noon one day / 3 hours / 30 minutes before"; the
+ * simulation measures plain hours so a quote is reproducible from the departure time alone.
  */
 export function refundPolicyFor(flightType: FlightType, family: FareFamily): RefundPolicy {
   if (flightType === "CHARTER") {
+    // Charter tickets are mostly non-refundable and the few refundable ones carry heavy penalties,
+    // so the sample sits at the strict end of what agencies publish (about 50-60% early, 70-80%
+    // within three days, the whole base fare close to departure).
     return {
       refundable: true,
       noShowPenaltyPercent: 100,
       tiers: [
-        { minHoursBefore: 72, penaltyPercent: 30, label: "بیش از ۷۲ ساعت مانده" },
-        { minHoursBefore: 24, penaltyPercent: 50, label: "۲۴ تا ۷۲ ساعت مانده" },
+        { minHoursBefore: 72, penaltyPercent: 50, label: "بیش از ۷۲ ساعت مانده" },
+        { minHoursBefore: 24, penaltyPercent: 80, label: "۲۴ تا ۷۲ ساعت مانده" },
         { minHoursBefore: 0, penaltyPercent: 100, label: "کمتر از ۲۴ ساعت مانده" },
       ],
     };
@@ -69,7 +74,10 @@ export function refundPolicyFor(flightType: FlightType, family: FareFamily): Ref
   };
 }
 
-/** Reasons that remove the penalty under the passenger-rights rules (airline-caused). */
+/**
+ * Reasons that remove the penalty. The CAO passenger-rights directive for domestic flights (1394)
+ * gives a full refund when the airline cancels and, on withdrawal, when the delay exceeds 2 hours.
+ */
 export const INVOLUNTARY_REFUND_REASONS = ["AIRLINE_CANCELLED", "DELAY_OVER_2H"] as const;
 export type RefundReason = "VOLUNTARY" | (typeof INVOLUNTARY_REFUND_REASONS)[number];
 
@@ -87,7 +95,7 @@ export interface RefundInput {
 export interface RefundResult {
   penaltyPercent: number;
   penaltyAmount: number;
-  /** Service fees are never returned on voluntary refunds. */
+  /** Service fees (and seat fees) are never returned on voluntary refunds; this platform's own rule. */
   nonRefundableFees: number;
   refundAmount: number;
   tierLabel: string;
@@ -104,7 +112,10 @@ export function calculateRefund(input: RefundInput): RefundResult {
       penaltyAmount: 0,
       nonRefundableFees: 0,
       refundAmount: paid,
-      tierLabel: "لغو یا تأخیر از سمت ایرلاین؛ بدون جریمه",
+      tierLabel:
+        reason === "DELAY_OVER_2H"
+          ? "تأخیر بیش از ۲ ساعت؛ بدون جریمه (بر پایه‌ی دستورالعمل پرواز داخلی؛ در پرواز خارجی یا چارتر ایرلاین تعیین می‌کند)"
+          : "لغو از سمت ایرلاین؛ بدون جریمه",
       isNoShow: false,
     };
   }
