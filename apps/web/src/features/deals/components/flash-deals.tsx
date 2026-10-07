@@ -11,7 +11,7 @@ interface FlashDealsProps {
   limit?: number;
 }
 
-export function FlashDeals({ origin = "THR", limit = 8 }: FlashDealsProps) {
+export function FlashDeals({ origin = "TEH", limit = 8 }: FlashDealsProps) {
   const { data, isPending, isError, error, refetch } = useFlashDeals(origin, limit);
 
   if (isPending) {
@@ -32,7 +32,7 @@ export function FlashDeals({ origin = "THR", limit = 8 }: FlashDealsProps) {
   if (data.length === 0)
     return (
       <p className="text-muted-foreground text-sm">
-        فعلاً پیشنهاد ویژه‌ای پیدا نشد؛ کمی بعد دوباره سر بزنید.
+        امروز پروازی با قیمت محسوساً زیر معمول پیدا نشد. قیمت‌ها هر روز دوباره بررسی می‌شوند.
       </p>
     );
 

@@ -1,10 +1,17 @@
 import type { PassengerType } from "@flysmart/contracts";
 import {
-  addDaysIso,
+  ageOnDate,
+  assessPassport,
   bookingContactSchema,
   bookingPassengerSchema,
+  DUPLICATE_PASSENGER_MESSAGE,
+  isIranian,
+  MIN_ESCORT_AGE,
+  passengerIdentityKey,
   passengerTypeForAge,
+  PASSPORT_MESSAGES,
   SEAT_PREFERENCES,
+  validateEscort,
 } from "@flysmart/contracts";
 import { z } from "zod";
 
@@ -17,14 +24,48 @@ export interface CheckoutRules {
   international: boolean;
 }
 
-/** Same six-month rule the API enforces, counted from the last flight. */
-export const PASSPORT_VALIDITY_DAYS = 183;
-
 export const TYPE_MISMATCH_MESSAGES: Record<PassengerType, string> = {
   ADULT: "این مسافر باید ۱۲ سال یا بیشتر داشته باشد",
   CHILD: "این مسافر باید ۲ تا ۱۱ سال داشته باشد",
   INFANT: "این مسافر باید کمتر از ۲ سال داشته باشد",
 };
+
+interface PassportHolder {
+  nationality?: string | null | undefined;
+  passportNumber?: string | null | undefined;
+  passportExpiry?: string | null | undefined;
+}
+
+/** Slots whose passport is valid on the trip but has under six months left: a warning, not a block. */
+export function shortPassportSlots(
+  passengers: readonly (PassportHolder | undefined)[],
+  rules: Pick<CheckoutRules, "flightDates" | "international">,
+): number[] {
+  const options = { international: rules.international, travelDates: rules.flightDates };
+  return passengers.flatMap((passenger, index) =>
+    passenger && assessPassport(passenger, options) === "SHORT_VALIDITY" ? [index] : [],
+  );
+}
+
+/**
+ * Where the escort problem is shown: on the birth date of the slot that was meant to be the
+ * escort but is under 18, otherwise on the first child or infant slot.
+ */
+function escortIssueIndex(
+  passengers: readonly { birthDate: string }[],
+  rules: CheckoutRules,
+): number {
+  const tooYoung = passengers.findIndex(
+    (passenger, index) =>
+      rules.slotTypes[index] === "ADULT" &&
+      rules.flightDates.some((date) => ageOnDate(passenger.birthDate, date) < MIN_ESCORT_AGE),
+  );
+  if (tooYoung >= 0) return tooYoung;
+  return Math.max(
+    0,
+    rules.slotTypes.findIndex((type) => type !== "ADULT"),
+  );
+}
 
 /**
  * The party size was fixed when the traveller searched and the fare was quoted for it, so each
@@ -37,10 +78,11 @@ export function buildCheckoutSchema(rules: CheckoutRules) {
       passengers: z.array(bookingPassengerSchema).length(rules.slotTypes.length),
       contact: bookingContactSchema,
       seatPreference: z.enum(SEAT_PREFERENCES),
+      /** Required only while some passport triggers the six-month warning. */
+      passportValidityAcknowledged: z.boolean(),
     })
     .superRefine((value, ctx) => {
-      const lastDate = [...rules.flightDates].sort().at(-1) ?? "";
-      const validUntil = addDaysIso(lastDate, PASSPORT_VALIDITY_DAYS);
+      const options = { international: rules.international, travelDates: rules.flightDates };
       const seen = new Set<string>();
 
       value.passengers.forEach((passenger, index) => {
@@ -58,7 +100,9 @@ export function buildCheckoutSchema(rules: CheckoutRules) {
           });
         }
 
-        if (rules.international) {
+        const passport = assessPassport(passenger, options);
+        // A foreigner's missing passport is already reported by the identity schema
+        if (passport === "MISSING" && isIranian(passenger.nationality)) {
           if (!passenger.passportNumber) {
             ctx.addIssue({
               code: "custom",
@@ -72,24 +116,51 @@ export function buildCheckoutSchema(rules: CheckoutRules) {
               message: "تاریخ انقضای گذرنامه الزامی است",
               path: ["passengers", index, "passportExpiry"],
             });
-          } else if (passenger.passportExpiry < validUntil) {
-            ctx.addIssue({
-              code: "custom",
-              message: "گذرنامه باید حداقل ۶ ماه پس از پرواز اعتبار داشته باشد",
-              path: ["passengers", index, "passportExpiry"],
-            });
           }
-        }
-
-        if (seen.has(passenger.nationalId)) {
+        } else if (passport === "EXPIRED") {
           ctx.addIssue({
             code: "custom",
-            message: "کد ملی مسافران نباید تکراری باشد",
-            path: ["passengers", index, "nationalId"],
+            message: PASSPORT_MESSAGES.expired,
+            path: ["passengers", index, "passportExpiry"],
           });
         }
-        seen.add(passenger.nationalId);
+
+        const key = passengerIdentityKey(passenger);
+        if (key !== null) {
+          if (seen.has(key)) {
+            ctx.addIssue({
+              code: "custom",
+              message: DUPLICATE_PASSENGER_MESSAGE,
+              path: [
+                "passengers",
+                index,
+                isIranian(passenger.nationality) ? "nationalId" : "passportNumber",
+              ],
+            });
+          }
+          seen.add(key);
+        }
       });
+
+      const escortProblem = validateEscort(value.passengers, rules.flightDates);
+      if (escortProblem) {
+        ctx.addIssue({
+          code: "custom",
+          message: escortProblem,
+          path: ["passengers", escortIssueIndex(value.passengers, rules), "birthDate"],
+        });
+      }
+
+      if (
+        shortPassportSlots(value.passengers, rules).length > 0 &&
+        !value.passportValidityAcknowledged
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          message: PASSPORT_MESSAGES.acknowledgementRequired,
+          path: ["passportValidityAcknowledged"],
+        });
+      }
     });
 }
 

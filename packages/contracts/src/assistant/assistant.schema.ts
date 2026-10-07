@@ -31,6 +31,7 @@ export const ASSISTANT_TOOLS = [
   "refund_estimate",
   "price_advice",
   "cheapest_flights",
+  "route_network",
 ] as const;
 export type AssistantTool = (typeof ASSISTANT_TOOLS)[number];
 

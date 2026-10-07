@@ -12,6 +12,7 @@ import { type Cabin, CABINS } from "../domain/seatmap";
 import type { PriceInsight, PricePoint } from "../pricing/price-insight";
 import type { PriceInsightSummary } from "../pricing/summary";
 import { isKnownLocationCode } from "../reference/airports";
+import { routeProblem } from "../reference/routes";
 
 export const FLIGHT_SORTS = ["best", "price", "departure", "duration"] as const;
 export type FlightSort = (typeof FLIGHT_SORTS)[number];
@@ -58,6 +59,20 @@ function refineMix(value: PassengerMixInput, ctx: z.RefinementCtx): void {
   if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["infants"] });
 }
 
+/** The two ends must differ and a direct route must exist, with the reason spelled out when not. */
+function refineRoute(value: { origin: string; destination: string }, ctx: z.RefinementCtx): void {
+  if (value.origin === value.destination) {
+    ctx.addIssue({
+      code: "custom",
+      message: "مبدأ و مقصد نباید یکسان باشند",
+      path: ["destination"],
+    });
+    return;
+  }
+  const problem = routeProblem(value.origin, value.destination);
+  if (problem) ctx.addIssue({ code: "custom", message: problem, path: ["destination"] });
+}
+
 export const searchFlightsQuerySchema = z
   .object({
     origin: locationCodeSchema,
@@ -87,13 +102,7 @@ export const searchFlightsQuerySchema = z
   })
   .superRefine((value, ctx) => {
     refineMix(value, ctx);
-    if (value.origin === value.destination) {
-      ctx.addIssue({
-        code: "custom",
-        message: "مبدأ و مقصد نباید یکسان باشند",
-        path: ["destination"],
-      });
-    }
+    refineRoute(value, ctx);
   });
 export type SearchFlightsQuery = z.infer<typeof searchFlightsQuerySchema>;
 
@@ -115,10 +124,7 @@ export const fareCalendarQuerySchema = z
     days: z.coerce.number().int().min(7).max(60).default(30),
     cabin: z.enum(CABINS).default("ECONOMY"),
   })
-  .refine((value) => value.origin !== value.destination, {
-    message: "مبدأ و مقصد نباید یکسان باشند",
-    path: ["destination"],
-  });
+  .superRefine(refineRoute);
 export type FareCalendarQuery = z.infer<typeof fareCalendarQuerySchema>;
 
 /* ---------------------------------- response shapes ---------------------------------- */

@@ -86,7 +86,10 @@ export interface AirportGuideDto {
   nameEn: string;
   cityFa: string;
   countryFa: string;
+  /** Flies international routes. */
   international: boolean;
+  /** Flies domestic routes (Imam Khomeini does not). */
+  domestic: boolean;
   /** Recommended arrival at the airport before departure, minutes. */
   arrivalLeadMinutes: number;
   checkInClosesMinutesBefore: number;

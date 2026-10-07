@@ -1,6 +1,7 @@
 "use client";
 
 import type { BookingDto, PaymentDto } from "@flysmart/contracts";
+import { passengerDisplayName } from "@flysmart/contracts";
 import { CheckCircle2Icon, CircleAlertIcon, TimerIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -136,8 +137,7 @@ function PayBody({ booking }: { booking: BookingDto }) {
             >
               {booking.passengers.map((passenger) => (
                 <li key={passenger.index}>
-                  {formatNumber(passenger.index + 1)}. {passenger.firstNameFa}{" "}
-                  {passenger.lastNameFa}
+                  {formatNumber(passenger.index + 1)}. {passengerDisplayName(passenger)}
                 </li>
               ))}
             </ul>
@@ -234,8 +234,8 @@ function Confirmed({ booking, payment }: { booking: BookingDto; payment: Payment
         <CheckCircle2Icon className="text-primary size-14" aria-hidden="true" />
         <h1 className="text-2xl font-extrabold">پرداخت با موفقیت انجام شد</h1>
         <p className="text-muted-foreground max-w-md text-sm">
-          بلیت شما صادر شد. کد رزرو را نزد خود نگه دارید. برای زمان حضور در فرودگاه، بار مجاز و
-          مدارک لازم از دستیار بپرسید.
+          رزرو شما ثبت شد (نسخه‌ی نمایشی: پرداخت و صدور بلیت واقعی نیست). کد رزرو را نزد خود نگه
+          دارید. برای زمان حضور در فرودگاه، بار مجاز و مدارک لازم از دستیار بپرسید.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Badge variant="secondary" className="h-7 px-3 text-sm">

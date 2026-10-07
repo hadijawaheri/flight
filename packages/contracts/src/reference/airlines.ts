@@ -19,7 +19,17 @@ export interface Airline {
   bases: readonly string[];
   /** International: destinations served from Iran. */
   destinations?: readonly string[];
-  /** Checked baggage per economy passenger (kg), domestic / international. */
+  /**
+   * Foreign carriers only: the Iranian airports it flies to. Left out, it serves every Iranian
+   * airport with a route to its destination (small airports otherwise get big foreign carriers).
+   */
+  gateways?: readonly string[];
+  /**
+   * Checked baggage (kg) of the standard economy fare, domestic / international. Cheapest fares
+   * (Lite, Super Saver, charter) may include less or none and business more, so the UI must keep
+   * telling travellers to confirm the figure on the ticket. Foreign carriers sell no domestic
+   * Iranian flights; their domestic value is only a placeholder.
+   */
   baggageKg: { domestic: number; international: number };
   hasBusiness: boolean;
   /** Meal service on board (domestic scheduled). */
@@ -37,7 +47,22 @@ export const AIRLINES: readonly Airline[] = [
     network: 0.95,
     fleet: ["A320", "A321", "A330", "F100", "ATR72"],
     bases: ["*"],
-    destinations: ["IST", "DXB", "DOH", "NJF", "BGW", "KWI", "EVN", "GYD", "MCT"],
+    destinations: [
+      "IST",
+      "DXB",
+      "DOH",
+      "NJF",
+      "BGW",
+      "KWI",
+      "EVN",
+      "GYD",
+      "MCT",
+      "TBS",
+      "JED",
+      "MED",
+      "SVO",
+      "LED",
+    ],
     baggageKg: { domestic: 20, international: 30 },
     hasBusiness: true,
     meal: true,
@@ -51,8 +76,9 @@ export const AIRLINES: readonly Airline[] = [
     charterShare: 0.1,
     network: 0.9,
     fleet: ["A320", "A321", "A330"],
-    bases: ["THR", "MHD", "KIH", "BND", "AWZ", "SYZ", "IFN"],
-    destinations: ["IST", "SAW", "DXB", "NJF", "BGW", "ESB"],
+    // Kerman is Mahan's home base.
+    bases: ["THR", "MHD", "KIH", "BND", "AWZ", "SYZ", "IFN", "KER"],
+    destinations: ["IST", "SAW", "DXB", "NJF", "BGW", "ESB", "JED", "MED", "SVO", "LED"],
     baggageKg: { domestic: 20, international: 30 },
     hasBusiness: true,
     meal: true,
@@ -66,8 +92,8 @@ export const AIRLINES: readonly Airline[] = [
     charterShare: 0.05,
     network: 0.85,
     fleet: ["ATR72", "F100", "MD83", "A320"],
-    bases: ["THR", "MHD", "SYZ", "IFN", "AWZ", "BND", "TBZ"],
-    destinations: ["NJF", "IST"],
+    bases: ["THR", "MHD", "SYZ", "IFN", "AWZ", "BND", "TBZ", "OMH"],
+    destinations: ["NJF", "IST", "ESB", "JED", "MED"],
     baggageKg: { domestic: 20, international: 30 },
     hasBusiness: false,
     meal: true,
@@ -110,7 +136,7 @@ export const AIRLINES: readonly Airline[] = [
     charterShare: 0.25,
     network: 0.55,
     fleet: ["A320", "F100", "E190"],
-    bases: ["THR", "MHD", "KIH", "SYZ", "IFN"],
+    bases: ["THR", "MHD", "KIH", "SYZ", "IFN", "AZD", "KER"],
     destinations: ["NJF", "BGW"],
     baggageKg: { domestic: 20, international: 30 },
     hasBusiness: false,
@@ -155,6 +181,7 @@ export const AIRLINES: readonly Airline[] = [
     network: 0.5,
     fleet: ["MD83", "A320"],
     bases: ["THR", "MHD", "SYZ", "IFN", "RAS", "SRY"],
+    destinations: ["NJF", "GYD"],
     baggageKg: { domestic: 20, international: 30 },
     hasBusiness: false,
     meal: false,
@@ -197,7 +224,7 @@ export const AIRLINES: readonly Airline[] = [
     network: 0.4,
     fleet: ["F100", "MD83"],
     bases: ["MHD", "THR", "BND", "KIH"],
-    baggageKg: { domestic: 15, international: 30 },
+    baggageKg: { domestic: 20, international: 30 },
     hasBusiness: false,
     meal: false,
   },
@@ -212,6 +239,7 @@ export const AIRLINES: readonly Airline[] = [
     fleet: ["A321", "A330", "B737", "B777"],
     bases: [],
     destinations: ["IST"],
+    gateways: ["IKA", "MHD", "SYZ", "IFN", "TBZ"],
     baggageKg: { domestic: 20, international: 30 },
     hasBusiness: true,
     meal: true,
@@ -227,24 +255,10 @@ export const AIRLINES: readonly Airline[] = [
     fleet: ["A320", "A321"],
     bases: [],
     destinations: ["SAW"],
+    gateways: ["IKA", "MHD", "SYZ", "IFN", "TBZ"],
     baggageKg: { domestic: 20, international: 20 },
     hasBusiness: false,
     meal: false,
-  },
-  {
-    code: "EK",
-    nameFa: "امارات",
-    nameEn: "Emirates",
-    kind: "FOREIGN",
-    priceFactor: 1.2,
-    charterShare: 0,
-    network: 1,
-    fleet: ["B777", "A330"],
-    bases: [],
-    destinations: ["DXB"],
-    baggageKg: { domestic: 20, international: 30 },
-    hasBusiness: true,
-    meal: true,
   },
   {
     code: "FZ",
@@ -257,6 +271,7 @@ export const AIRLINES: readonly Airline[] = [
     fleet: ["B737"],
     bases: [],
     destinations: ["DXB"],
+    gateways: ["IKA", "MHD", "SYZ", "IFN", "KIH", "BND"],
     baggageKg: { domestic: 20, international: 20 },
     hasBusiness: true,
     meal: false,
@@ -269,10 +284,11 @@ export const AIRLINES: readonly Airline[] = [
     priceFactor: 1.22,
     charterShare: 0,
     network: 1,
-    fleet: ["A330", "B777"],
+    fleet: ["A320", "A330", "B777"],
     bases: [],
     destinations: ["DOH"],
-    baggageKg: { domestic: 20, international: 30 },
+    gateways: ["IKA", "MHD", "SYZ", "IFN"],
+    baggageKg: { domestic: 20, international: 25 },
     hasBusiness: true,
     meal: true,
   },
@@ -299,10 +315,10 @@ export const AIRLINES: readonly Airline[] = [
     priceFactor: 1.15,
     charterShare: 0,
     network: 1,
-    fleet: ["A330", "B777"],
+    fleet: ["A320", "A330", "B777"],
     bases: [],
     destinations: ["AUH"],
-    baggageKg: { domestic: 20, international: 30 },
+    baggageKg: { domestic: 20, international: 23 },
     hasBusiness: true,
     meal: true,
   },
@@ -347,7 +363,7 @@ export const AIRLINES: readonly Airline[] = [
     fleet: ["B737", "A330"],
     bases: [],
     destinations: ["MCT"],
-    baggageKg: { domestic: 20, international: 30 },
+    baggageKg: { domestic: 20, international: 20 },
     hasBusiness: true,
     meal: true,
   },

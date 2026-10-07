@@ -1,5 +1,11 @@
 import type { AssistantCardDto, AssistantTool } from "@flysmart/contracts";
-import { addDaysIso, normalizeDigits, normalizeText, searchAirports } from "@flysmart/contracts";
+import {
+  addDaysIso,
+  getAirport,
+  normalizeDigits,
+  normalizeText,
+  searchAirports,
+} from "@flysmart/contracts";
 
 import type { ToolContext, ToolName } from "./assistant-toolbox.js";
 
@@ -116,6 +122,41 @@ function detectCheapest(text: string, today: string): PlannedCall | null {
   return { name: "cheapest_flights", input: { origin, destination, date } };
 }
 
+/** A named airport ("امام خمینی") or an IATA code in the text, where a city alone would be too loose. */
+function airportNamed(fragment: string): string | null {
+  const needle = normalizeText(fragment);
+  if (needle.length < 3) return null;
+  const hit = searchAirports(needle, 1)[0];
+  const airport = hit ? getAirport(hit.code) : undefined;
+  if (!airport) return null;
+  const named =
+    airport.code.toLowerCase() === needle || normalizeText(airport.nameFa).includes(needle);
+  return named ? airport.code : null;
+}
+
+/** "From Imam Khomeini where can I fly?" — answered from the route network, never from memory. */
+function detectRouteNetwork(text: string): PlannedCall | null {
+  if (!/(کجا|چه مقصد|کدام مقصد|مقصد ?های|مقصدها|مسیر ?های)/.test(text)) return null;
+  if (!/(پرواز|مقصد|مسیر|fly)/.test(text)) return null;
+  const fragments: string[] = [];
+  for (const match of text.matchAll(/(?:از|فرودگاه)\s+([\p{L}‌]+(?:\s+[\p{L}‌]+)?)/gu)) {
+    const words = (match[1] ?? "").split(/\s+/).filter((word) => word !== "فرودگاه");
+    if (words.length === 2) fragments.push(words.join(" "));
+    if (words[0]) fragments.push(words[0]);
+  }
+  for (const match of text.matchAll(/([\p{L}‌]{2,}|[a-z]{3})\s+(?:به\s+)?کجا/gu)) {
+    if (match[1]) fragments.push(match[1]);
+  }
+  for (const code of text.matchAll(/\b([a-z]{3})\b/g)) {
+    if (code[1]) fragments.push(code[1]);
+  }
+  for (const fragment of fragments) {
+    const origin = cityCode(fragment) ?? airportNamed(fragment);
+    if (origin) return { name: "route_network", input: { origin } };
+  }
+  return null;
+}
+
 /** Returns the tool calls worth making for a message, most specific first. */
 export function planOfflineCalls(
   message: string,
@@ -128,6 +169,7 @@ export function planOfflineCalls(
     detectExcessBaggage(text, context),
     detectRefund(text, context),
     detectCheapest(text, today),
+    detectRouteNetwork(text),
     detectPriceAdvice(text, context),
   ].filter((call): call is PlannedCall => call !== null);
   return calls;
@@ -139,6 +181,7 @@ export const CARD_TOOLS: ReadonlySet<AssistantTool> = new Set([
   "refund_estimate",
   "price_advice",
   "cheapest_flights",
+  "route_network",
 ]);
 
 export function cardLead(card: AssistantCardDto): string {

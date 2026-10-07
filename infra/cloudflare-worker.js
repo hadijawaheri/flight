@@ -1,13 +1,12 @@
 /**
  * Cloudflare Worker Reverse Proxy for FlySmart
- * Route: https://flight24.hadijawaheri63.workers.dev/*
- * Target: http://141.11.107.22.sslip.io:80 (Caddy Reverse Proxy)
+ * Set the ORIGIN_URL variable on the Worker (Settings → Variables), e.g. http://<server-ip>.sslip.io:80
  * Note: Cloudflare Workers requires a domain name (FQDN) like sslip.io to avoid Error 1003 (Direct IP access).
  */
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
-    const targetUrl = new URL(url.pathname + url.search, "http://141.11.107.22.sslip.io:80");
+    const targetUrl = new URL(url.pathname + url.search, env.ORIGIN_URL);
 
     const headers = new Headers(request.headers);
     headers.set("X-Forwarded-Host", url.hostname);

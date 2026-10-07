@@ -1,4 +1,8 @@
-const baseUrl = "http://141.11.107.22";
+const baseUrl = process.env.LIVE_URL;
+if (!baseUrl) {
+  console.error("Set LIVE_URL, e.g. https://example.com");
+  process.exit(1);
+}
 
 console.log("=== Testing Live FlySmart Deployment ===");
 console.log("Target Base URL:", baseUrl);

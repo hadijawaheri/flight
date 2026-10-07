@@ -11,7 +11,13 @@ import { KnowledgeService } from "../knowledge/knowledge.service.js";
 import { NOT_FOUND_ANSWER } from "./assistant.prompt.js";
 import { AssistantService } from "./assistant.service.js";
 import { AssistantToolbox } from "./assistant-toolbox.js";
-import { batteryCard, bookingRefundCard, excessBaggageCard, genericRefundCard } from "./cards.js";
+import {
+  batteryCard,
+  bookingRefundCard,
+  excessBaggageCard,
+  genericRefundCard,
+  routeNetworkCard,
+} from "./cards.js";
 import { planOfflineCalls } from "./offline-answerer.js";
 
 const TODAY = "2026-10-05";
@@ -106,6 +112,26 @@ describe("offline planner", () => {
       name: "cheapest_flights",
       input: { origin: "TEH", destination: "MHD", date: "2026-10-06" },
     });
+  });
+
+  it("answers where an airport flies from the route network", () => {
+    expect(planOfflineCalls("از فرودگاه امام خمینی به کجاها پرواز دارید؟", {}, TODAY)[0]).toEqual({
+      name: "route_network",
+      input: { origin: "IKA" },
+    });
+    expect(planOfflineCalls("از مشهد کجا می‌شه پرواز گرفت", {}, TODAY)[0]).toEqual({
+      name: "route_network",
+      input: { origin: "MHD" },
+    });
+  });
+
+  it("says plainly that Imam Khomeini has no domestic flights", () => {
+    const ika = routeNetworkCard("IKA");
+    expect(ika.rows.find((row) => row.label.includes("داخلی"))?.value).toContain("فقط پرواز خارجی");
+    expect(ika.rows.find((row) => row.label.includes("خارجی"))?.value).not.toContain("فقط");
+    const thr = routeNetworkCard("THR");
+    expect(thr.rows.find((row) => row.label.includes("خارجی"))?.value).toContain("بغداد");
+    expect(thr.rows.find((row) => row.label.includes("داخلی"))?.value).toContain("مشهد");
   });
 
   it("does not turn ordinary words into a route", () => {

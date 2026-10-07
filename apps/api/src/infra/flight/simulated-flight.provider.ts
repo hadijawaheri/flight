@@ -91,6 +91,13 @@ export class SimulatedFlightProvider extends FlightProvider {
     return flight ? fareAt(flight, record.cabin, observationDate) : record.adultBaseFare;
   }
 
+  typicalFare(record: FlightRecord): number {
+    const flight = this.scheduledOf(record);
+    return flight
+      ? fareAt(flight, record.cabin, this.clock.today(), { expected: true })
+      : record.adultBaseFare;
+  }
+
   private scheduledOf(record: FlightRecord): ScheduledFlight | null {
     const key = parseFlightId(record.id);
     return key ? findScheduled(key) : null;

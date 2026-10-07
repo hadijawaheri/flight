@@ -1,6 +1,7 @@
 "use client";
 
 import type { BookingDto, SeatDto, SliceDirection } from "@flysmart/contracts";
+import { passengerDisplayName } from "@flysmart/contracts";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -124,7 +125,7 @@ export function SeatPicker({ booking, onDirtyChange }: SeatPickerProps) {
         >
           {seated.map((passenger) => (
             <ToggleGroupItem key={passenger.index} value={String(passenger.index)}>
-              {formatNumber(passenger.index + 1)}. {passenger.firstNameFa} {passenger.lastNameFa}
+              {formatNumber(passenger.index + 1)}. {passengerDisplayName(passenger)}
               {draft[direction][passenger.index] && (
                 <span className="tnum text-muted-foreground" dir="ltr">
                   {draft[direction][passenger.index]}
@@ -147,7 +148,7 @@ export function SeatPicker({ booking, onDirtyChange }: SeatPickerProps) {
             map={map.data}
             passengers={seated.map((passenger) => ({
               index: passenger.index,
-              label: `${passenger.firstNameFa} ${passenger.lastNameFa}`,
+              label: passengerDisplayName(passenger),
             }))}
             assignments={draft[direction]}
             activePassenger={active}

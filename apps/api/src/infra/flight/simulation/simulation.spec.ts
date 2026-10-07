@@ -3,15 +3,18 @@ import {
   AIRPORTS,
   buildFlightId,
   diffDaysIso,
+  fitsSector,
+  getAirport,
   getRoute,
   parseFlightId,
+  WIDE_BODY_MIN_KM,
 } from "@flysmart/contracts";
 import { describe, expect, it } from "vitest";
 
 import { FixedClock } from "../../../common/clock/clock.js";
 import { SimulatedFlightProvider } from "../simulated-flight.provider.js";
 import { bookingCurve, fareAt, loadFactorAt } from "./pricing-model.js";
-import { findScheduled, operatorsFor, scheduleFor } from "./schedule.js";
+import { findScheduled, operatorsFor, scheduleFor, suitableAircraft } from "./schedule.js";
 
 const clock = new FixedClock(new Date("2026-10-05T08:00:00Z"));
 const provider = new SimulatedFlightProvider(clock);
@@ -81,6 +84,111 @@ describe("schedule", () => {
         if (route) expect(operatorsFor(route).length).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+describe("aircraft and operators", () => {
+  const routes = AIRPORTS.flatMap((a) =>
+    AIRPORTS.flatMap((b) => {
+      const route = getRoute(a.code, b.code);
+      return route ? [route] : [];
+    }),
+  );
+  const dates = Array.from({ length: 7 }, (_, offset) => addDaysIso("2026-10-20", offset));
+
+  it("never schedules a wide-body below the minimum sector, on any route", () => {
+    expect(routes.length).toBeGreaterThan(200);
+    for (const route of routes) {
+      for (const airline of operatorsFor(route)) {
+        const pool = suitableAircraft(airline, route);
+        expect(pool.length, `${airline.code} ${route.origin}-${route.destination}`).toBeGreaterThan(
+          0,
+        );
+        for (const aircraft of pool) {
+          if (route.distanceKm < WIDE_BODY_MIN_KM) expect(aircraft.wideBody).toBe(false);
+        }
+      }
+      for (const date of dates) {
+        for (const flight of scheduleFor(route.origin, route.destination, date)) {
+          const where = `${flight.flightNumber} ${route.origin}-${route.destination}`;
+          expect(fitsSector(flight.aircraft, route.distanceKm), where).toBe(true);
+          if (flight.aircraft.wideBody) {
+            expect(route.distanceKm, where).toBeGreaterThanOrEqual(WIDE_BODY_MIN_KM);
+          }
+        }
+      }
+    }
+  });
+
+  it("flies the Gulf hops with narrow-body or regional types", () => {
+    for (const [a, b] of [
+      ["KIH", "DXB"],
+      ["BND", "DXB"],
+      ["GSM", "DXB"],
+      ["AWZ", "KWI"],
+      ["AWZ", "DXB"],
+      ["MHD", "NJF"],
+    ] as const) {
+      const flights = dates.flatMap((date) => scheduleFor(a, b, date));
+      expect(flights.length, `${a}-${b}`).toBeGreaterThan(0);
+      for (const flight of flights) expect(flight.aircraft.wideBody, `${a}-${b}`).toBe(false);
+    }
+  });
+
+  it("keeps the long routes sensible: pilgrim and Russian flights are Iranian and fit the sector", () => {
+    for (const [a, b] of [
+      ["IKA", "JED"],
+      ["IKA", "MED"],
+      ["IKA", "SVO"],
+      ["MHD", "SVO"],
+      ["IKA", "LED"],
+      ["KER", "JED"],
+    ] as const) {
+      const flights = dates.flatMap((date) => scheduleFor(a, b, date));
+      expect(flights.length, `${a}-${b}`).toBeGreaterThan(0);
+      for (const flight of flights) {
+        expect(flight.airline.kind, `${a}-${b}`).toBe("IRANIAN");
+        expect(flight.aircraft.maxSectorKm, `${a}-${b}`).toBeGreaterThanOrEqual(
+          flight.route.distanceKm,
+        );
+        expect(flight.blockMinutes).toBeGreaterThan(100);
+      }
+    }
+  });
+
+  it("restricts foreign carriers to the Iranian airports they actually fly to", () => {
+    for (const route of routes.filter((candidate) => candidate.international)) {
+      const iranian =
+        getAirport(route.origin)?.countryCode === "IR" ? route.origin : route.destination;
+      for (const airline of operatorsFor(route)) {
+        if (airline.gateways)
+          expect(airline.gateways, `${airline.code} ${iranian}`).toContain(iranian);
+      }
+    }
+    // Pegasus and Turkish do not serve small airports such as Kerman or Ahvaz
+    expect(operatorsFor(getRoute("AWZ", "DXB")!).map((airline) => airline.code)).not.toContain(
+      "FZ",
+    );
+  });
+
+  it("sells charter-only routes as charters and leaves scheduled international flights systemic", () => {
+    for (const [a, b] of [
+      ["TBZ", "TBS"],
+      ["IKA", "JED"],
+      ["MED", "SYZ"],
+    ] as const) {
+      const flights = dates.flatMap((date) => scheduleFor(a, b, date));
+      expect(flights.length, `${a}-${b}`).toBeGreaterThan(0);
+      for (const flight of flights) expect(flight.flightType, `${a}-${b}`).toBe("CHARTER");
+    }
+    for (const flight of dates.flatMap((date) => scheduleFor("IKA", "IST", date))) {
+      expect(flight.flightType).toBe("SYSTEMIC");
+    }
+  });
+
+  it("flies no Kish–Doha service", () => {
+    expect(scheduleFor("KIH", "DOH", "2026-10-20")).toEqual([]);
+    expect(scheduleFor("DOH", "KIH", "2026-10-20")).toEqual([]);
   });
 });
 

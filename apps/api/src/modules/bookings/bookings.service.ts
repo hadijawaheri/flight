@@ -10,8 +10,8 @@ import type {
   SliceDirection,
 } from "@flysmart/contracts";
 import {
-  addDaysIso,
   ageOnDate,
+  assessPassport,
   autoAssignSeats,
   BOOKING_HOLD_MINUTES,
   buildPageMeta,
@@ -20,15 +20,19 @@ import {
   countPassengers,
   findSeat,
   hoursBetween,
+  isIranian,
   passengerTypeForAge,
+  PASSPORT_MESSAGES,
   requireAircraft,
   seatExists,
+  validateEscort,
   validatePassengerMix,
 } from "@flysmart/contracts";
 import { Injectable } from "@nestjs/common";
 import { InjectConnection, InjectModel } from "@nestjs/mongoose";
-import type { ClientSession, Connection, Model, QueryFilter } from "mongoose";
-import { Types } from "mongoose";
+// Mongoose 9 renamed FilterQuery to QueryFilter
+import type { ClientSession, Connection, QueryFilter } from "mongoose";
+import { Model, Types } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";
 import { Clock } from "../../common/clock/clock.js";
@@ -155,7 +159,7 @@ export class BookingsService {
       this.plan("OUTBOUND", outbound, dto),
       ...(inbound ? [this.plan("RETURN", inbound, dto)] : []),
     ];
-    this.assertInternationalDocuments(plans, dto);
+    const passportWarned = this.assertTravelDocuments(plans, dto);
 
     const total = plans.reduce((sum, plan) => sum + plan.fare.total, 0);
     if (total !== dto.quotedTotal) {
@@ -167,7 +171,7 @@ export class BookingsService {
 
     for (let attempt = 1; ; attempt += 1) {
       try {
-        return await this.createOnce(userId, dto, plans);
+        return await this.createOnce(userId, dto, plans, passportWarned);
       } catch (error: unknown) {
         // A lost seat race or a PNR collision is worth one more try with fresh availability
         const retryable =
@@ -182,6 +186,7 @@ export class BookingsService {
     userId: string,
     dto: CreateBookingDto,
     plans: SlicePlan[],
+    passportWarned: boolean,
   ): Promise<BookingDto> {
     const holdExpiresAt = new Date(this.clock.now().getTime() + BOOKING_HOLD_MINUTES * 60_000);
 
@@ -221,7 +226,14 @@ export class BookingsService {
     }
 
     const bookingId = new Types.ObjectId();
-    const document = this.buildDocument(bookingId, userId, dto, plans, holdExpiresAt);
+    const document = this.buildDocument(
+      bookingId,
+      userId,
+      dto,
+      plans,
+      holdExpiresAt,
+      passportWarned,
+    );
 
     await this.inTransaction(async (session) => {
       await this.inventory.holdSeats(
@@ -241,7 +253,10 @@ export class BookingsService {
   private plan(direction: SliceDirection, record: FlightRecord, dto: CreateBookingDto): SlicePlan {
     const date = departureDateOf(record);
     const types = dto.passengers.map((passenger) => passengerTypeForAge(passenger.birthDate, date));
-    const problem = validatePassengerMix(countPassengers(types));
+    // Age bands price the ticket (12+ is an adult fare) but the person responsible for an infant
+    // or child must be 18; the counts-only mix rule cannot see that
+    const problem =
+      validatePassengerMix(countPassengers(types)) ?? validateEscort(dto.passengers, [date]);
     if (problem) {
       throw new AppException(400, "VALIDATION_FAILED", problem, [
         { path: "passengers", message: problem },
@@ -278,41 +293,79 @@ export class BookingsService {
     }
   }
 
-  /** Foreign travel needs a passport valid for six months after the last flight. */
-  private assertInternationalDocuments(plans: SlicePlan[], dto: CreateBookingDto): void {
-    if (!plans.some((plan) => plan.record.international)) return;
-    const lastDate = plans.reduce(
-      (latest, plan) => (plan.date > latest ? plan.date : latest),
-      plans[0]?.date ?? "",
-    );
-    const validUntil = addDaysIso(lastDate, 183);
+  /**
+   * An expired or missing passport is a hard stop. One that is valid on the travel dates but has
+   * under six months left is only a risk (airlines and border officers decide), so it needs the
+   * traveller's explicit acknowledgement instead. Returns whether that warning applied.
+   */
+  private assertTravelDocuments(plans: SlicePlan[], dto: CreateBookingDto): boolean {
+    const options = {
+      international: plans.some((plan) => plan.record.international),
+      travelDates: plans.map((plan) => plan.date),
+    };
+    let shortValidity = false;
 
     dto.passengers.forEach((passenger, index) => {
-      let message: string | null = null;
-      if (!passenger.passportNumber || !passenger.passportExpiry) {
-        message = "برای پرواز خارجی شماره و تاریخ انقضای گذرنامه الزامی است";
-      } else if (passenger.passportExpiry < validUntil) {
-        message = "گذرنامه باید حداقل ۶ ماه پس از پرواز اعتبار داشته باشد";
-      }
+      const status = assessPassport(passenger, options);
+      if (status === "SHORT_VALIDITY") shortValidity = true;
+      const message =
+        status === "MISSING"
+          ? PASSPORT_MESSAGES.missing
+          : status === "EXPIRED"
+            ? PASSPORT_MESSAGES.expired
+            : null;
       if (message) {
         throw new AppException(400, "VALIDATION_FAILED", message, [
           { path: `passengers.${index}.passportNumber`, message },
         ]);
       }
     });
+
+    if (shortValidity && !dto.passportValidityAcknowledged) {
+      const message = PASSPORT_MESSAGES.acknowledgementRequired;
+      throw new AppException(400, "VALIDATION_FAILED", message, [
+        { path: "passportValidityAcknowledged", message },
+      ]);
+    }
+    return shortValidity;
   }
 
   private async assertNoDuplicateTravellers(
     plans: SlicePlan[],
     dto: CreateBookingDto,
   ): Promise<void> {
+    // Iranians are the same person by national code, foreigners by issuing country + passport
+    const nationalIds = dto.passengers.flatMap((passenger) =>
+      isIranian(passenger.nationality) && passenger.nationalId ? [passenger.nationalId] : [],
+    );
+    const identities: QueryFilter<BookingDocument>[] = dto.passengers.flatMap((passenger) =>
+      !isIranian(passenger.nationality) && passenger.passportNumber
+        ? [
+            {
+              passengers: {
+                $elemMatch: {
+                  nationality: passenger.nationality,
+                  passportNumber: passenger.passportNumber,
+                },
+              },
+            },
+          ]
+        : [],
+    );
+    if (nationalIds.length > 0) identities.push({ "passengers.nationalId": { $in: nationalIds } });
+    if (identities.length === 0) return;
+
     const clash = await this.bookingModel
       .findOne({
         "slices.flightId": { $in: plans.map((plan) => plan.record.id) },
-        "passengers.nationalId": { $in: dto.passengers.map((passenger) => passenger.nationalId) },
-        $or: [
-          { status: "CONFIRMED" },
-          { status: "PENDING_PAYMENT", holdExpiresAt: { $gt: this.clock.now() } },
+        $and: [
+          { $or: identities },
+          {
+            $or: [
+              { status: "CONFIRMED" },
+              { status: "PENDING_PAYMENT", holdExpiresAt: { $gt: this.clock.now() } },
+            ],
+          },
         ],
       })
       .select({ _id: 1 })
@@ -332,6 +385,7 @@ export class BookingsService {
     dto: CreateBookingDto,
     plans: SlicePlan[],
     holdExpiresAt: Date,
+    passportWarned: boolean,
   ): Partial<Booking> {
     const slices: BookingSlice[] = plans.map((plan) => ({
       direction: plan.direction,
@@ -355,11 +409,12 @@ export class BookingsService {
       return {
         index,
         savedPassengerId: passenger.savedPassengerId ?? null,
-        firstNameFa: passenger.firstNameFa,
-        lastNameFa: passenger.lastNameFa,
+        firstNameFa: passenger.firstNameFa ?? "",
+        lastNameFa: passenger.lastNameFa ?? "",
         firstNameEn: passenger.firstNameEn,
         lastNameEn: passenger.lastNameEn,
-        nationalId: passenger.nationalId,
+        nationality: passenger.nationality,
+        nationalId: isIranian(passenger.nationality) ? (passenger.nationalId ?? null) : null,
         birthDate: passenger.birthDate,
         gender: passenger.gender,
         passportNumber: passenger.passportNumber ?? null,
@@ -387,6 +442,7 @@ export class BookingsService {
       paidAt: null,
       cancelledAt: null,
       refund: null,
+      passportValidityAcknowledged: passportWarned,
       firstDepartureUtc: first.record.departureUtc,
       lastDepartureUtc: last.record.departureUtc,
     };

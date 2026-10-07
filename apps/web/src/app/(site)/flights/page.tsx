@@ -1,8 +1,10 @@
-import { isFlightId, locationLabel } from "@flysmart/contracts";
+import { isFlightId, locationLabel, routeProblem } from "@flysmart/contracts";
+import { InfoIcon } from "lucide-react";
 import type { Metadata } from "next";
 
 import { PageContainer } from "@/components/layout/page-container";
 import { PageHeader } from "@/components/shared/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { ResultsView } from "@/features/flights";
 import type { RawParams } from "@/features/search";
@@ -29,9 +31,22 @@ export default async function FlightsPage({ searchParams }: PageProps) {
   const today = tehranToday();
 
   if (!query) {
+    // A link such as Imam Khomeini to Mashhad is well-formed but has no flights: say why
+    const from = (Array.isArray(params.origin) ? params.origin[0] : params.origin)?.toUpperCase();
+    const to = (
+      Array.isArray(params.destination) ? params.destination[0] : params.destination
+    )?.toUpperCase();
+    const problem = from && to && from !== to ? routeProblem(from, to) : null;
     return (
       <PageContainer>
         <PageHeader title="جست‌وجوی پرواز" description="مبدأ، مقصد و تاریخ را انتخاب کنید." />
+        {problem && (
+          <Alert>
+            <InfoIcon />
+            <AlertTitle>این مسیر پرواز مستقیم ندارد</AlertTitle>
+            <AlertDescription>{problem}</AlertDescription>
+          </Alert>
+        )}
         <Card className="p-5">
           <SearchForm today={today} />
         </Card>

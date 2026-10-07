@@ -1,7 +1,9 @@
 /**
- * Lithium battery carriage under the ICAO/IATA dangerous goods rules that apply to every airline:
- * spare batteries and power banks travel in the cabin only; ≤100 Wh is free, 100–160 Wh needs
- * airline approval (max two), above 160 Wh is forbidden.
+ * Lithium battery carriage under the ICAO Technical Instructions / IATA DGR that apply to every
+ * airline: spare batteries and power banks travel in the cabin only; ≤100 Wh needs no approval,
+ * 100–160 Wh needs airline approval, above 160 Wh is forbidden. Rules announced for 27 March
+ * 2026 limit a passenger to two power banks and forbid recharging them on board; how and when
+ * each (Iranian) airline applies them varies, so every message says to confirm with the airline.
  */
 
 export const NOMINAL_CELL_VOLTS = 3.7;
@@ -38,16 +40,19 @@ export function evaluateBattery(input: BatteryInput): BatteryResult {
       verdict: "FORBIDDEN",
       location,
       maxPerPassenger: 0,
-      message: "باتری بالای ۱۶۰ وات‌ساعت در هیچ بخشی از پرواز مجاز نیست.",
+      message:
+        "باتری بالای ۱۶۰ وات‌ساعت را مسافر نمی‌تواند همراه ببرد؛ نه در کابین و نه در بار تحویلی.",
     };
   }
   if (wattHours > 100) {
+    // The two-battery cap is a rule for loose batteries; an installed one is limited by approval only.
     return {
       verdict: "NEEDS_APPROVAL",
       location,
-      maxPerPassenger: 2,
-      message:
-        "بین ۱۰۰ تا ۱۶۰ وات‌ساعت فقط با تأیید قبلی ایرلاین و حداکثر دو عدد برای هر مسافر مجاز است.",
+      maxPerPassenger: spare ? 2 : null,
+      message: spare
+        ? "بین ۱۰۰ تا ۱۶۰ وات‌ساعت فقط با تأیید قبلی ایرلاین و حداکثر دو عدد برای هر مسافر مجاز است و باید در کابین باشد."
+        : "باتری نصب‌شده‌ی بین ۱۰۰ تا ۱۶۰ وات‌ساعت فقط با تأیید قبلی ایرلاین مجاز است.",
     };
   }
   return {
@@ -55,7 +60,7 @@ export function evaluateBattery(input: BatteryInput): BatteryResult {
     location,
     maxPerPassenger: null,
     message: spare
-      ? "تا ۱۰۰ وات‌ساعت مجاز است؛ پاوربانک و باتری یدکی فقط داخل کیف دستی (کابین)، نه چمدان تحویلی."
-      : "باتری نصب‌شده روی دستگاه تا ۱۰۰ وات‌ساعت مجاز است.",
+      ? "تا ۱۰۰ وات‌ساعت بدون تأیید ایرلاین مجاز است؛ پاوربانک و باتری یدکی فقط داخل کیف دستی (کابین)، نه چمدان تحویلی. هر مسافر حداکثر دو پاوربانک می‌تواند داشته باشد و شارژ‌کردن پاوربانک حین پرواز ممنوع است."
+      : "باتری نصب‌شده روی دستگاه تا ۱۰۰ وات‌ساعت مجاز است؛ در بار تحویلی دستگاه باید کاملاً خاموش (نه در حالت خواب) و در برابر روشن‌شدن ناخواسته محافظت‌شده باشد.",
   };
 }

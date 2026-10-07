@@ -102,3 +102,11 @@ export function formatTomanCompact(rial: number): string {
   }
   return `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 0 }).format(toman / 1000)} هزار`;
 }
+
+/** `۲٫۵ میلیون تومان`, for budget bands where the exact digits would only be noise. */
+export function formatMillionToman(toman: number): string {
+  const millions = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(
+    toman / 1_000_000,
+  );
+  return `${millions} میلیون تومان`;
+}

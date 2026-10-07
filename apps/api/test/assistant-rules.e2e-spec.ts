@@ -30,7 +30,7 @@ describe("rules and assistant (e2e)", () => {
     ).toBe(true);
 
     const one = await request(server()).get("/v1/rules/dg-lithium-batteries").expect(200);
-    expect(one.body.data.reliability).toBe("STANDARD");
+    expect(one.body.data.reliability).toBe("VOLATILE");
     await request(server()).get("/v1/rules/unknown").expect(404);
   });
 

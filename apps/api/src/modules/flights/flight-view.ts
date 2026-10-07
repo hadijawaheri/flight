@@ -10,6 +10,7 @@ import {
   type FareBreakdown,
   type FlightPointDto,
   type FlightSummaryDto,
+  getAirport,
   hoursBetween,
   type PassengerType,
   type RefundPolicy,
@@ -60,7 +61,7 @@ export function expandMix(mix: {
 }
 
 export function fareFor(
-  record: Pick<FlightRecord, "flightType" | "international">,
+  record: Pick<FlightRecord, "flightType" | "international" | "origin">,
   adultBaseFare: number,
   types: readonly PassengerType[],
 ): FareBreakdown {
@@ -68,13 +69,14 @@ export function fareFor(
     adultBaseFare,
     flightType: record.flightType,
     international: record.international,
+    departsFromIran: getAirport(record.origin.code)?.countryCode === "IR",
     passengerTypes: types,
   });
 }
 
 /** Total one adult pays at a given base fare, the number shown as "the price". */
 export function adultTotalFor(
-  record: Pick<FlightRecord, "flightType" | "international">,
+  record: Pick<FlightRecord, "flightType" | "international" | "origin">,
   adultBaseFare: number,
 ): number {
   return fareFor(record, adultBaseFare, ["ADULT"]).total;
@@ -156,5 +158,5 @@ export function windowDates(
 }
 
 export function cabinLabelFa(cabin: Cabin): string {
-  return cabin === "BUSINESS" ? "بیزنس" : "اکونومی";
+  return cabin === "BUSINESS" ? "بیزینس" : "اکونومی";
 }

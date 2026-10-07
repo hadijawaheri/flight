@@ -59,4 +59,11 @@ export abstract class FlightProvider {
 
   /** Adult base fare on a given observation date (used by alerts and calendars). */
   abstract fareOn(record: FlightRecord, observationDate: string): number;
+
+  /**
+   * What this flight normally costs at today's distance from departure (adult base fare, rial).
+   * A deal is a fare below it; comparing with past days would not do, because fares rise as
+   * departure nears and every flight would look dearer than its own history.
+   */
+  abstract typicalFare(record: FlightRecord): number;
 }

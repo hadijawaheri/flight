@@ -238,3 +238,44 @@ describe("other schemas", () => {
     expect(createPassengerSchema.safeParse({ ...adult, firstNameEn: "علی" }).success).toBe(false);
   });
 });
+
+describe("routes that do not exist", () => {
+  const base = { date: "2026-10-20" };
+
+  it("rejects a domestic search from the international gateway, and the reverse, with the reason", () => {
+    for (const [origin, destination] of [
+      ["IKA", "MHD"],
+      ["MHD", "IKA"],
+    ] as const) {
+      const result = searchFlightsQuerySchema.safeParse({ origin, destination, ...base });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toContain("فقط پرواز خارجی");
+    }
+  });
+
+  it("rejects a domestic city without foreign flights and a pair of foreign airports", () => {
+    expect(
+      searchFlightsQuerySchema.safeParse({ origin: "BUZ", destination: "DXB", ...base }).success,
+    ).toBe(false);
+    expect(
+      searchFlightsQuerySchema.safeParse({ origin: "DXB", destination: "IST", ...base }).success,
+    ).toBe(false);
+    expect(fareCalendarQuerySchema.safeParse({ origin: "IKA", destination: "MHD" }).success).toBe(
+      false,
+    );
+  });
+
+  it("accepts the routes the network flies, in both directions", () => {
+    for (const [origin, destination] of [
+      ["IKA", "DXB"],
+      ["DXB", "IKA"],
+      ["TEH", "DXB"],
+      ["THR", "MHD"],
+    ] as const) {
+      expect(
+        searchFlightsQuerySchema.safeParse({ origin, destination, ...base }).success,
+        `${origin}-${destination}`,
+      ).toBe(true);
+    }
+  });
+});

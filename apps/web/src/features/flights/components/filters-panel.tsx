@@ -48,7 +48,7 @@ export function FiltersPanel({ offers, summary, filters, onChange, onReset }: Fi
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold">فیلتر نتایج</h2>
+        <h2 className="text-lg font-black">فیلتر نتایج</h2>
         {active > 0 && (
           <Button type="button" variant="ghost" size="sm" onClick={onReset}>
             حذف فیلترها ({formatNumber(active)})

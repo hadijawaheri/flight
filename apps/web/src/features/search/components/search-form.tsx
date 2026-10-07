@@ -1,7 +1,13 @@
 "use client";
 
-import type { Cabin } from "@flysmart/contracts";
-import { addDaysIso, searchFlightsQuerySchema } from "@flysmart/contracts";
+import type { Cabin, RouteKind } from "@flysmart/contracts";
+import {
+  addDaysIso,
+  ROUTE_KIND_LABELS,
+  ROUTE_KINDS,
+  routeProblem,
+  searchFlightsQuerySchema,
+} from "@flysmart/contracts";
 import { ArrowLeftRightIcon, PlaneTakeoffIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -13,6 +19,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { paths } from "@/lib/paths";
 import { cn } from "@/lib/utils";
 
+import {
+  allowedDestinations,
+  allowedOrigins,
+  kindOfTrip,
+  matchInOtherKind,
+  otherKind,
+  retarget,
+} from "../trip-kind";
 import { type TripQuery, tripSearchParams } from "../trip-query";
 import { AirportCombobox } from "./airport-combobox";
 import { JalaliDatePicker } from "./jalali-date-picker";
@@ -34,6 +48,9 @@ const HORIZON_DAYS = 330;
 export function SearchForm({ today, initial, className }: SearchFormProps) {
   const router = useRouter();
   const [roundTrip, setRoundTrip] = useState(Boolean(initial?.returnDate));
+  const [kind, setKind] = useState<RouteKind>(
+    initial ? kindOfTrip(initial.origin, initial.destination) : "DOMESTIC",
+  );
   const [origin, setOrigin] = useState(initial?.origin ?? "THR");
   const [destination, setDestination] = useState(initial?.destination ?? "");
   const [date, setDate] = useState(initial?.date ?? addDaysIso(today, 7));
@@ -53,8 +70,57 @@ export function SearchForm({ today, initial, className }: SearchFormProps) {
   const [pending, setPending] = useState(false);
 
   function swap() {
+    if (!destination) return;
     setOrigin(destination);
     setDestination(origin);
+  }
+
+  /** Switching kind keeps whatever still flies; `pick` carries an airport the traveller just chose. */
+  function switchKind(next: RouteKind, pick?: { field: "origin" | "destination"; code: string }) {
+    const ends = retarget(next, {
+      origin: pick?.field === "origin" ? pick.code : origin,
+      destination: pick?.field === "destination" ? pick.code : destination,
+    });
+    setKind(next);
+    setOrigin(ends.origin);
+    setDestination(ends.destination);
+    setErrors({});
+  }
+
+  function chooseOrigin(code: string) {
+    setOrigin(code);
+    // The other end must still fly from here; if it no longer does, the traveller picks again
+    if (destination && !allowedDestinations(kind, code).includes(destination)) setDestination("");
+  }
+
+  function chooseDestination(code: string) {
+    setDestination(code);
+    if (origin && !allowedOrigins(kind, code).includes(origin)) setOrigin("");
+  }
+
+  /** When the typed text only exists in the other kind of flight, say so and offer the switch. */
+  function renderEmptyHint(field: "origin" | "destination", query: string, close: () => void) {
+    const match = matchInOtherKind(query, kind);
+    if (!match) return null;
+    const next = otherKind(kind);
+    return (
+      <span className="mt-2 flex flex-col items-start gap-2">
+        <span>
+          {match.label} در پرواز {ROUTE_KIND_LABELS[next]} است، نه پرواز {ROUTE_KIND_LABELS[kind]}.
+        </span>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            switchKind(next, { field, code: match.code });
+            close();
+          }}
+        >
+          رفتن به پرواز {ROUTE_KIND_LABELS[next]}
+        </Button>
+      </span>
+    );
   }
 
   function submit(event: React.FormEvent) {
@@ -64,6 +130,10 @@ export function SearchForm({ today, initial, className }: SearchFormProps) {
     if (!destination) next.destination = "مقصد را انتخاب کنید";
     if (origin && destination && origin === destination)
       next.destination = "مبدأ و مقصد نباید یکسان باشند";
+    else if (origin && destination) {
+      const problem = routeProblem(origin, destination);
+      if (problem) next.destination = problem;
+    }
     if (date < today) next.date = "تاریخ گذشته است";
     if (roundTrip && returnDate < date) next.returnDate = "برگشت باید بعد از رفت باشد";
 
@@ -112,6 +182,18 @@ export function SearchForm({ today, initial, className }: SearchFormProps) {
         </ToggleGroup>
         <ToggleGroup
           type="single"
+          value={kind}
+          onValueChange={(value) => value && switchKind(value as RouteKind)}
+          aria-label="داخلی یا خارجی"
+        >
+          {ROUTE_KINDS.map((item) => (
+            <ToggleGroupItem key={item} value={item}>
+              {ROUTE_KIND_LABELS[item]}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <ToggleGroup
+          type="single"
           value={cabin}
           onValueChange={(value) => value && setCabin(value as Cabin)}
           aria-label="کلاس پرواز"
@@ -127,32 +209,41 @@ export function SearchForm({ today, initial, className }: SearchFormProps) {
           <AirportCombobox
             id="search-origin"
             value={origin}
-            onChange={setOrigin}
+            onChange={chooseOrigin}
             placeholder="از کجا؟"
             invalid={Boolean(errors.origin)}
             exclude={destination}
+            allowed={allowedOrigins(kind, destination)}
+            renderEmpty={(q, close) => renderEmptyHint("origin", q, close)}
           />
           {errors.origin && <FieldError>{errors.origin}</FieldError>}
         </Field>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-lg"
-          onClick={swap}
-          aria-label="جابه‌جایی مبدأ و مقصد"
-          className="group/swap mx-auto md:mt-6"
-        >
-          <ArrowLeftRightIcon className="transition-transform duration-300 ease-out group-active/swap:rotate-180" />
-        </Button>
+        <Field className="items-center">
+          <FieldLabel aria-hidden="true" className="invisible max-md:hidden">
+            مبدأ
+          </FieldLabel>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={swap}
+            aria-label="جابه‌جایی مبدأ و مقصد"
+            className="group/swap size-10"
+          >
+            <ArrowLeftRightIcon className="transition-transform duration-300 ease-out group-active/swap:rotate-180" />
+          </Button>
+        </Field>
         <Field data-invalid={Boolean(errors.destination)}>
           <FieldLabel htmlFor="search-destination">مقصد</FieldLabel>
           <AirportCombobox
             id="search-destination"
             value={destination}
-            onChange={setDestination}
+            onChange={chooseDestination}
             placeholder="به کجا؟"
             invalid={Boolean(errors.destination)}
             exclude={origin}
+            allowed={allowedDestinations(kind, origin)}
+            renderEmpty={(q, close) => renderEmptyHint("destination", q, close)}
           />
           {errors.destination && <FieldError>{errors.destination}</FieldError>}
         </Field>

@@ -5,7 +5,7 @@ import type {
   BookingSliceDto,
   BookingStatus,
 } from "@flysmart/contracts";
-import { maskNationalCode } from "@flysmart/contracts";
+import { DEFAULT_NATIONALITY, maskNationalCode, maskPassportNumber } from "@flysmart/contracts";
 
 import type { Booking, BookingPassenger } from "./schemas/booking.schema.js";
 
@@ -24,11 +24,6 @@ export function effectiveStatus(
   return booking.status;
 }
 
-function maskPassport(value: string | null): string | null {
-  if (!value) return null;
-  return value.length <= 3 ? "***" : `${"*".repeat(value.length - 3)}${value.slice(-3)}`;
-}
-
 function toPassengerDto(passenger: BookingPassenger): BookingPassengerDto {
   return {
     index: passenger.index,
@@ -37,8 +32,9 @@ function toPassengerDto(passenger: BookingPassenger): BookingPassengerDto {
     lastNameFa: passenger.lastNameFa,
     firstNameEn: passenger.firstNameEn,
     lastNameEn: passenger.lastNameEn,
-    nationalIdMasked: maskNationalCode(passenger.nationalId),
-    passportNumberMasked: maskPassport(passenger.passportNumber),
+    nationality: passenger.nationality ?? DEFAULT_NATIONALITY,
+    nationalIdMasked: passenger.nationalId ? maskNationalCode(passenger.nationalId) : null,
+    passportNumberMasked: maskPassportNumber(passenger.passportNumber),
     seats: passenger.seats,
     tickets: passenger.tickets,
   };

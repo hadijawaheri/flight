@@ -4,6 +4,7 @@ import {
   AIRLINES,
   type Airport,
   type FareFamily,
+  fitsSector,
   type FlightKey,
   type FlightType,
   getAircraft,
@@ -62,6 +63,19 @@ function pairKey(a: string, b: string): string {
 
 const operatorCache = new Map<string, Airline[]>();
 
+/**
+ * The fleet types an airline could put on a route: sector length rules out wide-bodies on short
+ * hops (Kish–Dubai) and turboprops or old jets on long ones.
+ */
+export function suitableAircraft(airline: Airline, route: RouteSpec): AircraftType[] {
+  return airline.fleet
+    .map((id) => getAircraft(id))
+    .filter(
+      (aircraft): aircraft is AircraftType =>
+        aircraft !== undefined && fitsSector(aircraft, route.distanceKm),
+    );
+}
+
 /** Airlines that serve a route; stable over time, symmetric in direction. */
 export function operatorsFor(route: RouteSpec): Airline[] {
   const cacheKey = `${route.origin}-${route.destination}`;
@@ -77,18 +91,24 @@ export function operatorsFor(route: RouteSpec): Airline[] {
   if (route.international) {
     const foreign = origin.countryCode === "IR" ? destination : origin;
     const iranian = origin.countryCode === "IR" ? origin : destination;
-    operators = AIRLINES.filter((airline) => {
+    const eligible = AIRLINES.filter((airline) => {
       if (!airline.destinations?.includes(foreign.code)) return false;
-      if (
+      if (airline.gateways && !airline.gateways.includes(iranian.code)) return false;
+      // A carrier with nothing that fits the sector (a wide-body-only fleet on a short hop) skips it.
+      if (suitableAircraft(airline, route).length === 0) return false;
+      return !(
         airline.kind === "IRANIAN" &&
         airline.bases[0] !== "*" &&
         !airline.bases.includes(iranian.code) &&
         iranian.code !== "IKA"
-      ) {
-        return false;
-      }
-      return unitFromKey(`${airline.code}|${pair}|presence`) < airline.network;
+      );
     });
+    const presence = (airline: Airline): number =>
+      unitFromKey(`${airline.code}|${pair}|presence`) / airline.network;
+    operators = eligible.filter((airline) => presence(airline) < 1);
+    // Someone must fly a route in the network: the likeliest eligible carrier, else Iran Air.
+    const likeliest = [...eligible].sort((x, y) => presence(x) - presence(y))[0];
+    if (operators.length === 0 && likeliest) operators = [likeliest];
     if (operators.length === 0) operators = AIRLINES.filter((airline) => airline.code === "IR");
   } else {
     operators = AIRLINES.filter((airline) => {
@@ -97,7 +117,11 @@ export function operatorsFor(route: RouteSpec): Airline[] {
         airline.bases[0] === "*" ||
         airline.bases.includes(origin.code) ||
         airline.bases.includes(destination.code);
-      return serves && unitFromKey(`${airline.code}|${pair}|presence`) < airline.network;
+      return (
+        serves &&
+        suitableAircraft(airline, route).length > 0 &&
+        unitFromKey(`${airline.code}|${pair}|presence`) < airline.network
+      );
     });
     if (operators.length === 0) operators = AIRLINES.filter((airline) => airline.code === "IR");
   }
@@ -116,18 +140,12 @@ function weightedPick<T extends { network: number }>(items: readonly T[], unit: 
 }
 
 function chooseAircraft(airline: Airline, route: RouteSpec, unit: number): AircraftType {
-  const fleet = airline.fleet
-    .map((id) => getAircraft(id))
-    .filter((aircraft): aircraft is AircraftType => aircraft !== undefined);
-  const suitable = fleet.filter((aircraft) => {
-    if (aircraft.id === "ATR72") return route.distanceKm <= 800;
-    if (aircraft.id === "F100" || aircraft.id === "E190") return route.distanceKm <= 1800;
-    if (aircraft.id === "A330" || aircraft.id === "B777")
-      return route.international || route.distanceKm >= 1100;
-    return true;
-  });
-  const pool = suitable.length > 0 ? suitable : fleet;
-  return pool[Math.floor(unit * pool.length) % pool.length] as AircraftType;
+  const pool = suitableAircraft(airline, route);
+  const aircraft = pool[Math.floor(unit * pool.length) % pool.length];
+  // operatorsFor only returns airlines with a fitting type, so an empty pool is a programming error.
+  if (!aircraft)
+    throw new Error(`${airline.code} has no aircraft for ${route.origin}-${route.destination}`);
+  return aircraft;
 }
 
 function chooseFareFamily(airline: Airline, flightType: FlightType, unit: number): FareFamily {
@@ -160,9 +178,10 @@ function slotsFor(route: RouteSpec): Slot[] {
     const speedScale = clamp(800 / aircraft.cruiseKmh, 0.92, 1.45);
     const blockMinutes = Math.max(35, roundTo(route.blockMinutes * speedScale, 5));
     const flightType: FlightType =
-      !route.international &&
-      airline.kind === "IRANIAN" &&
-      unitFromKey(`${seed}|charter`) < airline.charterShare
+      route.charterOnly ||
+      (!route.international &&
+        airline.kind === "IRANIAN" &&
+        unitFromKey(`${seed}|charter`) < airline.charterShare)
         ? "CHARTER"
         : "SYSTEMIC";
     const number = 100 + Math.floor(unitFromKey(`${airline.code}|${seed}|number`) * 8800);

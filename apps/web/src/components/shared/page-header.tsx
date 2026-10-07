@@ -11,10 +11,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, actions, className }: PageHeaderProps) {
   return (
-    <div className={cn("flex flex-wrap items-end justify-between gap-3", className)}>
+    <div className={cn("flex flex-wrap items-end justify-between gap-4", className)}>
       <div className="flex min-w-0 flex-col gap-1">
-        <h1 className="text-2xl font-extrabold tracking-tight text-balance md:text-3xl">{title}</h1>
-        {description && <p className="text-muted-foreground max-w-prose text-sm">{description}</p>}
+        <h1 className="text-3xl font-black tracking-tight text-balance md:text-5xl">{title}</h1>
+        {description && <p className="text-foreground/75 max-w-prose text-base">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>

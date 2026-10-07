@@ -1,7 +1,13 @@
 "use client";
 
 import type { PassengerDto } from "@flysmart/contracts";
-import { createPassengerSchema, maskNationalCode } from "@flysmart/contracts";
+import {
+  createPassengerSchema,
+  maskNationalCode,
+  maskPassportNumber,
+  nationalityNameFa,
+  passengerDisplayName,
+} from "@flysmart/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PencilIcon, PlusIcon, StarIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { useState } from "react";
@@ -62,6 +68,7 @@ const EMPTY: Partial<FormInput> = {
   lastNameFa: "",
   firstNameEn: "",
   lastNameEn: "",
+  nationality: "IR",
   nationalId: "",
   birthDate: "",
   passportNumber: null,
@@ -127,9 +134,7 @@ export function PassengersManager() {
               <Card className="flex-row items-start justify-between gap-3 p-4">
                 <div className="flex min-w-0 flex-col gap-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold">
-                      {passenger.firstNameFa} {passenger.lastNameFa}
-                    </span>
+                    <span className="font-bold">{passengerDisplayName(passenger)}</span>
                     {passenger.isDefault && (
                       <Badge variant="secondary">
                         <StarIcon aria-hidden="true" />
@@ -141,10 +146,21 @@ export function PassengersManager() {
                     {passenger.firstNameEn} {passenger.lastNameEn}
                   </p>
                   <p className="text-muted-foreground text-xs">
-                    کد ملی{" "}
-                    <bdi dir="ltr" className="tnum">
-                      {maskNationalCode(passenger.nationalId)}
-                    </bdi>{" "}
+                    {passenger.nationalId ? (
+                      <>
+                        کد ملی{" "}
+                        <bdi dir="ltr" className="tnum">
+                          {maskNationalCode(passenger.nationalId)}
+                        </bdi>
+                      </>
+                    ) : (
+                      <>
+                        {nationalityNameFa(passenger.nationality)} · گذرنامه{" "}
+                        <bdi dir="ltr" className="tnum">
+                          {maskPassportNumber(passenger.passportNumber) ?? "—"}
+                        </bdi>
+                      </>
+                    )}{" "}
                     · تولد {formatJalaliShort(passenger.birthDate)}
                   </p>
                 </div>
@@ -154,7 +170,7 @@ export function PassengersManager() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => setEditing(passenger)}
-                    aria-label={`ویرایش ${passenger.firstNameFa} ${passenger.lastNameFa}`}
+                    aria-label={`ویرایش ${passengerDisplayName(passenger)}`}
                   >
                     <PencilIcon />
                   </Button>
@@ -163,7 +179,7 @@ export function PassengersManager() {
                     variant="ghost"
                     size="icon-sm"
                     onClick={() => setRemoving(passenger)}
-                    aria-label={`حذف ${passenger.firstNameFa} ${passenger.lastNameFa}`}
+                    aria-label={`حذف ${passengerDisplayName(passenger)}`}
                   >
                     <Trash2Icon />
                   </Button>
@@ -188,7 +204,7 @@ export function PassengersManager() {
           <AlertDialogHeader>
             <AlertDialogTitle>حذف این مسافر؟</AlertDialogTitle>
             <AlertDialogDescription>
-              {removing?.firstNameFa} {removing?.lastNameFa} از فهرست شما حذف می‌شود. رزروهای قبلی
+              {removing && passengerDisplayName(removing)} از فهرست شما حذف می‌شود. رزروهای قبلی
               تغییری نمی‌کنند.
             </AlertDialogDescription>
           </AlertDialogHeader>

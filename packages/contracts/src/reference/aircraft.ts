@@ -14,7 +14,15 @@ export interface AircraftType {
   exitRows: readonly number[];
   /** Typical block speed used by the schedule simulator (km/h). */
   cruiseKmh: number;
+  /** Wide-body (twin-aisle): too big and costly to fly on short hops. */
+  wideBody: boolean;
+  /** Shortest and longest great-circle sector (km) an airline would schedule this type on. */
+  minSectorKm: number;
+  maxSectorKm: number;
 }
+
+/** Below this a wide-body is never scheduled (Kish–Dubai is ~200 km, Bandar Abbas–Dubai ~240 km). */
+export const WIDE_BODY_MIN_KM = 1500;
 
 export const AIRCRAFT: readonly AircraftType[] = [
   {
@@ -26,6 +34,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 3,
     exitRows: [12, 13],
     cruiseKmh: 800,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 5000,
   },
   {
     id: "A321",
@@ -36,6 +47,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 3,
     exitRows: [14, 15],
     cruiseKmh: 800,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 5000,
   },
   {
     id: "A330",
@@ -46,6 +60,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 5,
     exitRows: [17, 18],
     cruiseKmh: 850,
+    wideBody: true,
+    minSectorKm: WIDE_BODY_MIN_KM,
+    maxSectorKm: 12000,
   },
   {
     id: "B737",
@@ -56,6 +73,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 3,
     exitRows: [14, 15],
     cruiseKmh: 800,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 5000,
   },
   {
     id: "B777",
@@ -66,6 +86,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 6,
     exitRows: [20, 21],
     cruiseKmh: 880,
+    wideBody: true,
+    minSectorKm: 2000,
+    maxSectorKm: 12000,
   },
   {
     id: "F100",
@@ -76,6 +99,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 0,
     exitRows: [9],
     cruiseKmh: 720,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 1800,
   },
   {
     id: "MD83",
@@ -86,6 +112,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 0,
     exitRows: [11, 12],
     cruiseKmh: 780,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 2800,
   },
   {
     id: "ATR72",
@@ -96,6 +125,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 0,
     exitRows: [8],
     cruiseKmh: 510,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 800,
   },
   {
     id: "E190",
@@ -106,6 +138,9 @@ export const AIRCRAFT: readonly AircraftType[] = [
     businessRows: 0,
     exitRows: [10],
     cruiseKmh: 780,
+    wideBody: false,
+    minSectorKm: 0,
+    maxSectorKm: 1800,
   },
 ];
 
@@ -135,4 +170,9 @@ export function businessSeats(aircraft: AircraftType): number {
 
 export function economySeats(aircraft: AircraftType): number {
   return totalSeats(aircraft) - businessSeats(aircraft);
+}
+
+/** Whether an airline could sensibly put this type on a sector of the given great-circle length. */
+export function fitsSector(aircraft: AircraftType, distanceKm: number): boolean {
+  return distanceKm >= aircraft.minSectorKm && distanceKm <= aircraft.maxSectorKm;
 }

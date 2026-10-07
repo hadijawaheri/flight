@@ -103,7 +103,7 @@ export function PassengersPicker({ id, value, onChange }: PassengersPickerProps)
         </ul>
         <p className="text-muted-foreground mt-3 text-xs">
           حداکثر {formatNumber(MAX)} مسافر با صندلی در هر رزرو؛ تعداد نوزاد از بزرگسال بیشتر
-          نمی‌شود.
+          نمی‌شود. همراه کودک و نوزاد باید حداقل ۱۸ سال داشته باشد.
         </p>
         <Button type="button" size="sm" className="mt-3 w-full" onClick={() => setOpen(false)}>
           تأیید
