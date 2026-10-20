@@ -2,18 +2,12 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   verify:
     runs-on: ubuntu-latest
-    services:
-      mongo:
-        image: mongo:8
-        ports: ["27017:27017"]
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1})'"
-          --health-interval 5s --health-retries 10
+    # API tests start their own in-memory replica set (test/global-setup.ts), so no Mongo service here
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

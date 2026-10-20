@@ -9,6 +9,7 @@
   "scripts": {
     "build": "nest build",
     "start:prod": "node dist/main",
+    "migrate": "node dist/migrate",
     "lint": "echo 'lint runs from repo root (eslint .)'",
     "test": "vitest run && vitest run --config ./vitest.config.e2e.ts",
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",

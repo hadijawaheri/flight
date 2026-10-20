@@ -1,6 +1,6 @@
 import type { PassengerDto } from "@flysmart/contracts";
 import { isIranian, passengerIdentityIssues } from "@flysmart/contracts";
-import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
@@ -23,9 +23,6 @@ function isDuplicateKey(error: unknown): boolean {
 }
 
 const NOT_FOUND = "مسافر یافت نشد";
-const INDEX_NOT_FOUND = 27;
-/** Unique on userId + nationalId for every passenger; foreigners (no national code) all collide on it. */
-const LEGACY_NATIONAL_ID_INDEX = "userId_1_nationalId_1";
 
 function duplicateMessage(error: unknown): string {
   const pattern = (error as { keyPattern?: Record<string, unknown> }).keyPattern;
@@ -35,26 +32,10 @@ function duplicateMessage(error: unknown): string {
 }
 
 @Injectable()
-export class PassengersService implements OnModuleInit {
-  private readonly logger = new Logger(PassengersService.name);
-
+export class PassengersService {
   constructor(
     @InjectModel(Passenger.name) private readonly passengerModel: Model<PassengerDocument>,
   ) {}
-
-  // The old unconditional unique index rejects a second foreigner per user, and there is no
-  // migration runner. The replacements are created first so uniqueness is never left unenforced.
-  async onModuleInit(): Promise<void> {
-    try {
-      await this.passengerModel.createIndexes();
-      await this.passengerModel.collection.dropIndex(LEGACY_NATIONAL_ID_INDEX);
-    } catch (error: unknown) {
-      // Pre-existing duplicate data must not stop the API from booting
-      if ((error as { code?: number }).code !== INDEX_NOT_FOUND) {
-        this.logger.warn(`Passenger index migration skipped: ${String(error)}`);
-      }
-    }
-  }
 
   async list(userId: string): Promise<PassengerDto[]> {
     const passengers = await this.passengerModel

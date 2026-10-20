@@ -7,6 +7,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { MongooseModule } from "@nestjs/mongoose";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { LoggerModule } from "nestjs-pino";
+import { stdTimeFunctions } from "pino";
 
 import { ClockModule } from "./common/clock/clock.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
@@ -42,6 +43,8 @@ import { UsersModule } from "./modules/users/users.module.js";
         return {
           pinoHttp: {
             level: nodeEnv === "test" ? "silent" : "info",
+            // Readable in PM2 log files and sortable by any log shipper
+            timestamp: stdTimeFunctions.isoTime,
             genReqId: (req, res) => {
               const incoming = req.headers["x-request-id"];
               const id = typeof incoming === "string" ? incoming : randomUUID();

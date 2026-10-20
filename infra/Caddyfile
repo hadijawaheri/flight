@@ -1,9 +1,10 @@
-# Production: replace with your domain, e.g. example.com. Caddy obtains and renews TLS automatically.
+# Production: SITE_ADDRESS=example.com. With a domain, Caddy obtains and renews the TLS certificate
+# automatically and redirects HTTP (80) to HTTPS (443). UPSTREAM is web:7792 under docker compose.
 {$SITE_ADDRESS:http://localhost:8080} {
 	encode zstd gzip
 
 	# Only the web app is public; it proxies /api/* to the API on loopback
-	reverse_proxy 127.0.0.1:7782 {
+	reverse_proxy {$UPSTREAM:127.0.0.1:7792} {
 		# Hides the short gap while PM2 restarts a process during deploys
 		lb_try_duration 10s
 		lb_try_interval 250ms

@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.next
+**/.env
+**/.env.*
+!**/.env.example
+**/coverage
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+.git
+.husky
+deploy_key*
+*.pem
