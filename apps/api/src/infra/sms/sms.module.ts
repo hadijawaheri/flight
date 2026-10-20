@@ -4,10 +4,10 @@ import { PinoLogger } from "nestjs-pino";
 
 import type { Env } from "../../config/env.js";
 import { ConsoleSmsProvider } from "./console-sms.provider.js";
+import { MelipayamakSmsProvider } from "./melipayamak-sms.provider.js";
 import { SmsProvider } from "./sms.provider.js";
 
-// Add a real provider class here (e.g. MelipayamakSmsProvider) and map it by SMS_PROVIDER.
-// An unimplemented provider must fail at boot, never silently fall back to the console.
+// An unimplemented or unconfigured provider must fail at boot, never fall back to the console.
 @Global()
 @Module({
   providers: [
@@ -17,6 +17,15 @@ import { SmsProvider } from "./sms.provider.js";
       useFactory: (config: ConfigService<Env, true>, logger: PinoLogger): SmsProvider => {
         const provider = config.get("SMS_PROVIDER", { infer: true });
         if (provider === "console") return new ConsoleSmsProvider(logger);
+        if (provider === "melipayamak") {
+          const apiKey = config.get("MELIPAYAMAK_API_KEY", { infer: true });
+          const otpBodyId = config.get("MELIPAYAMAK_OTP_BODY_ID", { infer: true });
+          if (!apiKey || !otpBodyId) {
+            throw new Error("MELIPAYAMAK_API_KEY and MELIPAYAMAK_OTP_BODY_ID are required");
+          }
+          const from = config.get("MELIPAYAMAK_FROM", { infer: true });
+          return new MelipayamakSmsProvider({ apiKey, otpBodyId, from }, logger);
+        }
         throw new Error(`SMS provider "${provider}" is not implemented yet`);
       },
     },

@@ -4,6 +4,12 @@
 set -euo pipefail
 
 git pull --ff-only
+
+# ALLOW_DEV_AUTH moved from PM2 to apps/api/.env; keep the old behaviour until it is set there
+if ! grep -q '^ALLOW_DEV_AUTH=' apps/api/.env; then
+  echo "ALLOW_DEV_AUTH=true" >> apps/api/.env
+  echo "WARNING: ALLOW_DEV_AUTH=true was added to apps/api/.env; anyone can sign in with the fixed code." >&2
+fi
 corepack enable
 pnpm install --frozen-lockfile
 # INTERNAL_API_URL is baked into the Next rewrites at build time

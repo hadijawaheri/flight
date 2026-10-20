@@ -6,6 +6,12 @@ const flag = (fallback: "true" | "false") =>
     .default(fallback)
     .transform((value) => value === "true");
 
+// `KEY=` in a .env file arrives as "", which must mean "unset"
+const optionalString = z
+  .string()
+  .optional()
+  .transform((value) => (value && value.trim().length > 0 ? value.trim() : undefined));
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -20,8 +26,16 @@ const envSchema = z
       .default("http://localhost:7782")
       .transform((value) => value.split(",").map((origin) => origin.trim())),
     SMS_PROVIDER: z.enum(["console", "melipayamak"]).default("console"),
+    MELIPAYAMAK_API_KEY: optionalString,
+    MELIPAYAMAK_OTP_BODY_ID: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    ),
+    MELIPAYAMAK_FROM: optionalString,
     OTP_FIXED_CODE: z.string().length(6).optional(),
     ALLOW_DEV_AUTH: flag("false"),
+    // A public demo can keep the simulated gateway while sign-in uses real SMS codes
+    ALLOW_SIMULATED_PAYMENTS: flag("false"),
     THROTTLE_ENABLED: flag("true"),
 
     // Flights and payments run on simulated providers until real ones are connected
@@ -53,9 +67,14 @@ const envSchema = z
     },
   )
   .refine(
-    (env) => env.ALLOW_DEV_AUTH || env.NODE_ENV !== "production" || env.PAYMENT_PROVIDER !== "mock",
+    (env) =>
+      env.ALLOW_DEV_AUTH ||
+      env.ALLOW_SIMULATED_PAYMENTS ||
+      env.NODE_ENV !== "production" ||
+      env.PAYMENT_PROVIDER !== "mock",
     {
-      message: "The mock payment provider is forbidden in production unless ALLOW_DEV_AUTH=true",
+      message:
+        "The mock payment provider is forbidden in production unless ALLOW_SIMULATED_PAYMENTS=true",
     },
   );
 

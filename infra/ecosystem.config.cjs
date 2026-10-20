@@ -15,7 +15,8 @@ module.exports = {
         NODE_ENV: "production",
         PORT: 7791,
         HOST: "127.0.0.1",
-        ALLOW_DEV_AUTH: "true",
+        // ALLOW_DEV_AUTH lives in apps/api/.env: values here would override it and could
+        // never be switched off without editing the repo
       },
       max_memory_restart: "512M",
       kill_timeout: 10_000,
