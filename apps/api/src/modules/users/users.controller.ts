@@ -1,5 +1,5 @@
 import type { ApiResponse, UserDto } from "@flysmart/contracts";
-import { Body, Controller, Delete, HttpCode, Patch } from "@nestjs/common";
+import { Body, Controller, Patch } from "@nestjs/common";
 
 import { CurrentUser } from "../../common/decorators/current-user.decorator.js";
 import type { AuthUser } from "../../common/types/auth.js";
@@ -16,11 +16,5 @@ export class UsersController {
     @Body() dto: UpdateProfileDto,
   ): Promise<ApiResponse<UserDto>> {
     return { data: await this.usersService.updateProfile(user.id, dto) };
-  }
-
-  @Delete("me")
-  @HttpCode(204)
-  async deleteMe(@CurrentUser() user: AuthUser): Promise<void> {
-    await this.usersService.softDelete(user.id);
   }
 }

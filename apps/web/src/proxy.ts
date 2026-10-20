@@ -2,6 +2,8 @@ import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { buildCsp, createNonce, NONCE_HEADER } from "@/lib/csp";
+
 const API_ORIGIN = process.env.INTERNAL_API_URL ?? "http://localhost:7781";
 const PROTECTED_PREFIXES = ["/dashboard", "/checkout"];
 
@@ -16,7 +18,7 @@ function redirectToSignIn(request: NextRequest): NextResponse {
 }
 
 // Server Components cannot set cookies, so an expired access token is rotated here
-async function refreshAndContinue(request: NextRequest): Promise<NextResponse> {
+async function refreshAndContinue(request: NextRequest, forwarded: Headers): Promise<NextResponse> {
   const res = await fetch(`${API_ORIGIN}/v1/auth/refresh`, {
     method: "POST",
     headers: { cookie: request.headers.get("cookie") ?? "" },
@@ -33,7 +35,7 @@ async function refreshAndContinue(request: NextRequest): Promise<NextResponse> {
   }
 
   // The same request must see the fresh tokens, the browser gets them via Set-Cookie
-  const headers = new Headers(request.headers);
+  const headers = new Headers(forwarded);
   headers.set("cookie", [...jar].map(([name, value]) => `${name}=${value}`).join("; "));
   const response = NextResponse.next({ request: { headers } });
   for (const line of setCookies) response.headers.append("set-cookie", line);
@@ -42,20 +44,33 @@ async function refreshAndContinue(request: NextRequest): Promise<NextResponse> {
 
 // Optimistic check only: real authorization lives in the API guards and the server-side DAL
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  const nonce = createNonce();
+  const csp = buildCsp(nonce, process.env.NODE_ENV === "development");
+  const forwarded = new Headers(request.headers);
+  forwarded.set(NONCE_HEADER, nonce);
+  forwarded.set("content-security-policy", csp);
+
+  const response = await route(request, forwarded);
+  response.headers.set("content-security-policy", csp);
+  return response;
+}
+
+async function route(request: NextRequest, forwarded: Headers): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   const hasAccess = request.cookies.has(COOKIE_NAMES.access);
   const hasRefresh = request.cookies.has(COOKIE_NAMES.refresh);
+  const next = () => NextResponse.next({ request: { headers: forwarded } });
 
   if (PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-    if (hasAccess) return NextResponse.next();
-    if (hasRefresh) return refreshAndContinue(request);
+    if (hasAccess) return next();
+    if (hasRefresh) return refreshAndContinue(request, forwarded);
     return redirectToSignIn(request);
   }
 
   if (pathname === "/sign-in" && (hasAccess || hasRefresh)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
-  return NextResponse.next();
+  return next();
 }
 
 export const config = {

@@ -47,8 +47,9 @@ describe("users (e2e)", () => {
 
   it("soft-deletes the user and allows the same mobile to register again", async () => {
     const first = await signIn();
-    await first.agent.delete("/v1/users/me").expect(204);
-    await first.agent.get("/v1/auth/me").expect(404);
+    await first.agent.post("/v1/auth/reauth/request").expect(204);
+    await first.agent.post("/v1/auth/account/delete").send({ code: "123456" }).expect(204);
+    await first.agent.get("/v1/auth/me").expect(401);
 
     const second = await signIn(first.mobile);
     expect(second.userId).not.toBe(first.userId);

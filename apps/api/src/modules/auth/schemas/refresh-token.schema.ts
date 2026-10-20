@@ -24,10 +24,16 @@ export class RefreshToken {
 
   @Prop({ type: Date, required: true })
   expiresAt!: Date;
+
+  // Hard end of the login chain: rotation slides expiresAt but never past this.
+  // Null only on tokens issued before the absolute limit existed.
+  @Prop({ type: Date, default: null })
+  familyExpiresAt!: Date | null;
 }
 
 export type RefreshTokenDocument = HydratedDocument<RefreshToken>;
 export const RefreshTokenSchema = SchemaFactory.createForClass(RefreshToken);
 RefreshTokenSchema.index({ tokenHash: 1 }, { unique: true });
 RefreshTokenSchema.index({ familyId: 1 });
+RefreshTokenSchema.index({ userId: 1 });
 RefreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
