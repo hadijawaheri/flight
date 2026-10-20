@@ -12,7 +12,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";
 import type { JwtPayload } from "../../common/types/auth.js";
@@ -20,7 +20,7 @@ import type { Env } from "../../config/env.js";
 import { SmsProvider } from "../../infra/sms/sms.provider.js";
 import { UsersService } from "../users/users.service.js";
 import type { SessionTokens } from "./auth.cookies.js";
-import { ACCESS_TTL_MS, REFRESH_TTL_MS } from "./auth.cookies.js";
+import { ACCESS_TTL_MS, SESSION_ABSOLUTE_MS, SESSION_IDLE_MS } from "./auth.cookies.js";
 import type { OtpDocument } from "./schemas/otp.schema.js";
 import { Otp } from "./schemas/otp.schema.js";
 import type { RefreshTokenDocument } from "./schemas/refresh-token.schema.js";
@@ -77,6 +77,33 @@ export class AuthService {
   }
 
   async verifyOtp(mobile: string, code: string): Promise<{ user: UserDto; tokens: SessionTokens }> {
+    await this.consumeOtp(mobile, code);
+    const user = await this.usersService.findOrCreateByMobile(mobile);
+    return { user, tokens: await this.issueSession(user, randomUUID(), null) };
+  }
+
+  /** Sends a fresh code to the signed-in user's own mobile before an irreversible action. */
+  async requestReauth(userId: string): Promise<void> {
+    const user = await this.usersService.getById(userId);
+    await this.requestOtp(user.mobile);
+  }
+
+  async deleteAccount(userId: string, code: string): Promise<void> {
+    const user = await this.usersService.getById(userId);
+    await this.consumeOtp(user.mobile, code);
+    await this.usersService.softDelete(userId);
+    await this.revokeAllSessions(userId);
+  }
+
+  async revokeAllSessions(userId: string): Promise<void> {
+    // The schema's userId is untyped at runtime, so rows may hold either form
+    await this.refreshModel.updateMany(
+      { userId: { $in: [userId, new Types.ObjectId(userId)] }, familyRevoked: false },
+      { $set: { familyRevoked: true, revokedAt: new Date() } },
+    );
+  }
+
+  private async consumeOtp(mobile: string, code: string): Promise<void> {
     // Increment first so concurrent guesses cannot exceed the attempt limit
     const otp = await this.otpModel
       .findOneAndUpdate({ mobile }, { $inc: { attempts: 1 } }, { returnDocument: "after" })
@@ -92,8 +119,6 @@ export class AuthService {
     }
 
     await this.otpModel.deleteOne({ mobile });
-    const user = await this.usersService.findOrCreateByMobile(mobile);
-    return { user, tokens: await this.issueSession(user, randomUUID()) };
   }
 
   async refresh(refreshToken: string | undefined): Promise<SessionTokens> {
@@ -115,10 +140,12 @@ export class AuthService {
 
     let userId: string;
     let familyId: string;
+    let familyExpiresAt: Date | null;
 
     if (rotated) {
       userId = rotated.userId.toString();
       familyId = rotated.familyId;
+      familyExpiresAt = rotated.familyExpiresAt;
     } else {
       const previous = await this.refreshModel.findOne({ tokenHash }).lean();
       if (!previous || previous.expiresAt < now || previous.familyRevoked) throw unauthenticated();
@@ -133,12 +160,13 @@ export class AuthService {
       }
       userId = previous.userId.toString();
       familyId = previous.familyId;
+      familyExpiresAt = previous.familyExpiresAt;
     }
 
     const user = await this.usersService.getById(userId).catch(() => {
       throw unauthenticated();
     });
-    return this.issueSession(user, familyId);
+    return this.issueSession(user, familyId, familyExpiresAt);
   }
 
   async logout(refreshToken: string | undefined): Promise<void> {
@@ -154,7 +182,16 @@ export class AuthService {
     );
   }
 
-  private async issueSession(user: UserDto, familyId: string): Promise<SessionTokens> {
+  private async issueSession(
+    user: UserDto,
+    familyId: string,
+    familyExpiresAt: Date | null,
+  ): Promise<SessionTokens> {
+    const now = Date.now();
+    // Chains from before the absolute limit get one from their next rotation
+    const familyEnd = familyExpiresAt ?? new Date(now + SESSION_ABSOLUTE_MS);
+    const expiresAt = new Date(Math.min(now + SESSION_IDLE_MS, familyEnd.getTime()));
+
     const payload: JwtPayload = { sub: user.id, role: user.role };
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.config.get("JWT_ACCESS_SECRET", { infer: true }),
@@ -166,9 +203,10 @@ export class AuthService {
       userId: user.id,
       familyId,
       tokenHash: sha256(refreshToken),
-      expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+      expiresAt,
+      familyExpiresAt: familyEnd,
     });
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, refreshExpiresAt: expiresAt };
   }
 
   private hashOtp(mobile: string, code: string): string {

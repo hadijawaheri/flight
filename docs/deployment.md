@@ -22,7 +22,7 @@
 
 - API با PM2 روی سرور اجرا می‌شود (`infra/ecosystem.config.cjs`). برای Vercel باید از بیرون با HTTPS در دسترس باشد: یک دامنه (یا زیردامنه) روی سرور، Caddy با `reverse_proxy 127.0.0.1:7791` برای `api.<domain>`، سپس `https://api.<domain>/health` را بزنید.
 - در `apps/api/.env` سرور: `JWT_ACCESS_SECRET` و `OTP_HMAC_SECRET` تصادفی (`openssl rand -base64 48`)، `DATABASE_URL` به Mongo با replica set، `ALLOW_DEV_AUTH=false` و `OTP_FIXED_CODE` خالی برای سایت عمومی.
-- **هشدار:** `ecosystem.config.cjs` الان `ALLOW_DEV_AUTH: "true"` دارد؛ یعنی هر کسی با کد ثابت وارد می‌شود. برای سایت عمومی آن را `false` کنید و `SMS_PROVIDER` واقعی بگذارید (یا سایت را فقط نمایشی و پشت رمز نگه دارید).
+- **هشدار:** `ALLOW_DEV_AUTH` حالا فقط در `apps/api/.env` تعیین می‌شود (اگر نباشد، `deploy.sh` برای حفظ رفتار قبلی `true` اضافه می‌کند). برای سایت عمومی: `SMS_PROVIDER=melipayamak` با `MELIPAYAMAK_API_KEY` و `MELIPAYAMAK_OTP_BODY_ID` (الگوی تأییدشده با یک متغیر برای کد)، `OTP_FIXED_CODE` خالی، `ALLOW_DEV_AUTH=false` و تا وصل شدن درگاه واقعی `ALLOW_SIMULATED_PAYMENTS=true`. سپس `pm2 startOrReload infra/ecosystem.config.cjs --update-env`.
 
 ## ۳. Vercel (وب)
 

@@ -9,9 +9,10 @@ import { DirectionProvider } from "@/components/ui/direction";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-export function AppProviders({ children }: PropsWithChildren) {
+export function AppProviders({ children, nonce }: PropsWithChildren<{ nonce?: string }>) {
   return (
-    <ThemeProvider>
+    // next-themes injects an inline script; without the nonce the CSP would block it
+    <ThemeProvider nonce={nonce}>
       <DirectionProvider dir="rtl">
         <NuqsAdapter>
           <QueryProvider>

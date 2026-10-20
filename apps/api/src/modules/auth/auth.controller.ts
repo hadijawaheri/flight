@@ -12,7 +12,7 @@ import type { Env } from "../../config/env.js";
 import { UsersService } from "../users/users.service.js";
 import { clearSessionCookies, setSessionCookies } from "./auth.cookies.js";
 import { AuthService } from "./auth.service.js";
-import { RequestOtpDto, VerifyOtpDto } from "./dto/auth.dto.js";
+import { DeleteAccountDto, RequestOtpDto, VerifyOtpDto } from "./dto/auth.dto.js";
 
 function refreshCookieOf(req: Request): string | undefined {
   const cookies = req.cookies as Record<string, string | undefined> | undefined;
@@ -71,6 +71,35 @@ export class AuthController {
   @HttpCode(204)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     await this.authService.logout(refreshCookieOf(req));
+    clearSessionCookies(res, this.isProd);
+  }
+
+  @Post("logout-all")
+  @HttpCode(204)
+  async logoutAll(
+    @CurrentUser() user: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.authService.revokeAllSessions(user.id);
+    clearSessionCookies(res, this.isProd);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post("reauth/request")
+  @HttpCode(204)
+  async requestReauth(@CurrentUser() user: AuthUser): Promise<void> {
+    await this.authService.requestReauth(user.id);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post("account/delete")
+  @HttpCode(204)
+  async deleteAccount(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: DeleteAccountDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.authService.deleteAccount(user.id, dto.code);
     clearSessionCookies(res, this.isProd);
   }
 

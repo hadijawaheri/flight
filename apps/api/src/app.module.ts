@@ -11,6 +11,7 @@ import { stdTimeFunctions } from "pino";
 
 import { ClockModule } from "./common/clock/clock.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
+import { CrossSiteGuard } from "./common/guards/cross-site.guard.js";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
 import { RolesGuard } from "./common/guards/roles.guard.js";
 import { ZodValidationPipe } from "./common/zod/zod-validation.pipe.js";
@@ -96,6 +97,7 @@ import { UsersModule } from "./modules/users/users.module.js";
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_GUARD, useClass: CrossSiteGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

@@ -8,17 +8,6 @@ import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -28,11 +17,12 @@ import { getErrorMessage } from "@/lib/api/parse";
 import { paths } from "@/lib/paths";
 
 import { usersApi } from "../api";
+import { DeleteAccountDialog } from "./delete-account-dialog";
 
 export function ProfileForm({ user }: { user: UserDto }) {
   const router = useRouter();
   const save = useMutation({ mutationFn: usersApi.updateProfile });
-  const deleteAccount = useMutation({ mutationFn: usersApi.deleteAccount });
+  const logoutEverywhere = useMutation({ mutationFn: usersApi.logoutEverywhere });
   const form = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
     mode: "onTouched",
@@ -49,11 +39,10 @@ export function ProfileForm({ user }: { user: UserDto }) {
     }
   });
 
-  async function removeAccount() {
+  async function signOutEverywhere() {
     try {
-      await deleteAccount.mutateAsync();
-      router.replace(paths.home);
-      router.refresh();
+      await logoutEverywhere.mutateAsync();
+      window.location.replace(paths.home);
     } catch (error: unknown) {
       toast.error(getErrorMessage(error));
     }
@@ -116,6 +105,29 @@ export function ProfileForm({ user }: { user: UserDto }) {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-lg">دستگاه‌های واردشده</CardTitle>
+          <CardDescription>
+            اگر روی دستگاه دیگری وارد شده‌اید و به آن دسترسی ندارید، از همه‌ی دستگاه‌ها خارج شوید.
+            نشست‌ها پس از یک هفته استفاده‌نکردن و حداکثر ۳۰ روز پس از ورود خودکار بسته می‌شوند.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void signOutEverywhere()}
+            disabled={logoutEverywhere.isPending}
+          >
+            {logoutEverywhere.isPending && (
+              <Spinner data-icon="inline-start" aria-label="در حال خروج" />
+            )}
+            خروج از همه‌ی دستگاه‌ها
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-lg">حذف حساب</CardTitle>
           <CardDescription>
             با حذف حساب، دسترسی شما به رزروها و مسافران ذخیره‌شده بسته می‌شود. این کار قابل بازگشت
@@ -123,34 +135,7 @@ export function ProfileForm({ user }: { user: UserDto }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button type="button" variant="destructive">
-                حذف حساب کاربری
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>حساب حذف شود؟</AlertDialogTitle>
-                <AlertDialogDescription>
-                  اگر رزرو فعالی دارید، پیش از حذف آن را لغو یا استفاده کنید. حذف حساب قابل بازگشت
-                  نیست.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>انصراف</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(event) => {
-                    event.preventDefault();
-                    void removeAccount();
-                  }}
-                  disabled={deleteAccount.isPending}
-                >
-                  حذف حساب
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <DeleteAccountDialog mobile={user.mobile} />
         </CardContent>
       </Card>
     </div>
