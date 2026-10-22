@@ -17,4 +17,3 @@ test-results
 .vercel
 .impeccable/hook.cache.json
 Claude outputs/
-infra/prod.env

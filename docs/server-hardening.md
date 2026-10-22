@@ -96,16 +96,7 @@ ALLOW_SIMULATED_PAYMENTS=true
 
 سپس `pm2 startOrReload infra/ecosystem.config.cjs --update-env`. اگر کلید یا الگو نادرست باشد، API بالا نمی‌آید یا ورود خطا می‌دهد. پیش از ریستارت، `pm2 logs flysmart-api` را باز نگه دارید.
 
-## ۷. جایگزین: اجرای کامل با Docker
-
-```bash
-cp infra/prod.env.example infra/prod.env   # رمزها را پر کنید
-docker compose -f infra/docker-compose.prod.yml --env-file infra/prod.env up -d --build
-```
-
-Mongo با کاربر جدا و رمزدار، migration، API، وب و Caddy بالا می‌آیند. فقط پورت‌های ۸۰ و ۴۴۳ منتشر می‌شوند. `apps/api/.env` همچنان برای اسرار JWT/OTP و تنظیمات پیامک خوانده می‌شود. این مسیر جایگزین PM2 است، نه همراه آن.
-
-## ۸. شاخه‌ها
+## ۷. شاخه‌ها
 
 - `main`: همان چیزی که روی سرور است. فقط از طریق PR ادغام شود.
 - `develop`: کار روزمره. شاخه‌های `feat/*` و `fix/*` از `develop` جدا و به آن ادغام می‌شوند، و برای انتشار PR از `develop` به `main` باز می‌شود.
