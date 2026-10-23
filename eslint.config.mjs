@@ -32,7 +32,14 @@ export default tseslint.config(
     },
   },
   {
-    files: ["apps/api/**/*.ts", "packages/**/*.ts", "scripts/**/*.mjs", "*.mjs"],
+    files: [
+      "apps/api/**/*.ts",
+      "apps/api/migrate-mongo-config.js",
+      "apps/api/migrations/**/*.js",
+      "packages/**/*.ts",
+      "scripts/**/*.mjs",
+      "*.mjs",
+    ],
     languageOptions: { globals: globals.node },
   },
   // Cloudflare Worker runs in a service-worker runtime (fetch, Request, URL), not Node

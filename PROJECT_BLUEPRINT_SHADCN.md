@@ -98,30 +98,33 @@
 
 ### دفتر تصمیم‌ها (Decision Log)
 
-| حوزه                   | انتخاب                                                            | ردشده                                      | دلیل                                                                                 | چه زمانی بازبینی                                                   |
-| ---------------------- | ----------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| ساختار ریپو            | **pnpm workspace** (`apps/api`, `apps/web`, `packages/contracts`) | دو ریپوی جدا                               | اشتراک schema/type بدون کپی؛ یک PR برای تغییر API+UI                                 | اگر تیم‌های جدا با چرخه release جدا شدند                           |
-| Task runner            | فقط `pnpm -r` / `--filter`                                        | Turborepo/Nx                               | اضافه‌بار بی‌دلیل در شروع                                                            | CI بیش از ~۵ دقیقه شد → Turborepo                                  |
-| UI                     | **shadcn/ui** (Radix) + Tailwind v4                               | کتابخانه‌های UI بسته (HeroUI، MUI)         | کد در پروژه، قابل‌شخصی‌سازی، RTL رسمی، اکوسیستم registry                             | اگر Radix نگهداری‌اش افت کرد → `migrate-radix-to-base`             |
-| Server state           | **TanStack Query**                                                | Redux thunk                                | cache، retry، invalidation آماده؛ کد کمتر                                            | —                                                                  |
-| Client state           | `useState`/Context؛ در صورت نیاز **Zustand**                      | Redux Toolkit                              | RTK برای state سراسری _کلاینتی_ کوچک، boilerplate سنگین است                          | اگر state سراسری پیچیده شد                                         |
-| فرم                    | **react-hook-form + Zod**                                         | Formik + Yup                               | الگوی رسمی shadcn؛ Formik تقریباً متروک؛ Zod مشترک با backend                        | —                                                                  |
-| Validation backend     | Zod + `createZodDto` و pipe **خودنوشت** (حدود ۲۵ خط)              | class-validator، `nestjs-zod`              | حذف دوگانگی با frontend؛ peer پکیج `nestjs-zod` تا Nest 11 است و با Nest 12 تست نشده | اگر `nestjs-zod` رسماً Nest 12 را پشتیبانی کرد می‌توان جایگزین کرد |
-| تست backend            | **Vitest** (پیش‌فرض Nest 12)                                      | Jest                                       | Nest 12 با Vitest و ESM می‌آید؛ مهاجرت بی‌دلیل است                                   | —                                                                  |
-| Lint                   | **یک** ESLint در ریشه (+ `eslint-config-next` برای web)           | oxlint پیش‌فرض Nest، config جدا برای هر اپ | یک قانون برای کل ریپو                                                                | —                                                                  |
-| نسخه TypeScript/ESLint | پین با **pnpm catalog** (`~6.0`، `~9.39`)                         | آخرین نسخه                                 | TS 7 و ESLint 10 زنجیره ابزار را می‌شکنند (بخش ۲۰)                                   | وقتی peerهای typescript-eslint/eslint-plugin-react پشتیبانی کردند  |
-| HTTP client            | `fetch` با wrapper نازک                                           | axios                                      | بدون وابستگی؛ با cache/streaming Next سازگار                                         | —                                                                  |
-| Auth                   | **JWT در httpOnly cookie** + refresh rotation                     | JWT در js-cookie ۹۰ روزه                   | محافظت از XSS، توکن کوتاه‌عمر                                                        | افزودن SSO/OAuth                                                   |
-| نقش‌ها                 | یک مدل User + `role` + RBAC                                       | سه strategy جدا                            | کد کمتر، یک مسیر auth                                                                | —                                                                  |
-| Toast                  | **sonner**                                                        | react-toastify                             | استاندارد shadcn، RTL و تم داخلی                                                     | —                                                                  |
-| آیکون                  | **lucide-react**                                                  | iconsax-reactjs                            | کامپوننت‌های shadcn خودشان lucide دارند؛ ترکیب دو کتابخانه = ناهماهنگی               | —                                                                  |
-| تاریخ                  | `Intl` (`fa-IR-u-ca-persian`) + `date-fns-jalali`/DayPicker       | jalali-moment                              | moment منسوخ و سنگین                                                                 | —                                                                  |
-| ارقام فارسی            | تابع ۶ خطی `normalizeDigits` در contracts                         | ap-to-english                              | یک بار در schema، نه در هر service                                                   | —                                                                  |
-| نام فایل               | **kebab-case** همه‌جا                                             | PascalCase.tsx                             | macOS بزرگ/کوچک را یکی می‌داند، Linux نه → باگ CI                                    | —                                                                  |
-| Export                 | **named export** (به‌جز فایل‌های ویژه Next)                       | default export                             | rename امن، auto-import دقیق                                                         | —                                                                  |
-| Barrel `index.ts`      | فقط در مرز feature                                                | در هر پوشه                                 | barrel زیاد = کندی build و dev                                                       | —                                                                  |
-| استقرار                | **PM2 + Caddy** روی سرور (بدون Docker)                            | Docker/Kubernetes                          | سادگی، دیباگ مستقیم، TLS خودکار با Caddy؛ Docker فقط اختیاری برای سرویس‌های dev      | اگر چند سرور یا autoscaling لازم شد                                |
-| i18n                   | فقط فارسی، بدون کتابخانه                                          | next-intl از روز اول                       | هزینه بی‌مورد                                                                        | اولین نیاز به زبان دوم → next-intl (کلاس‌های logical آماده‌اند)    |
+| حوزه                   | انتخاب                                                            | ردشده                                      | دلیل                                                                                      | چه زمانی بازبینی                                                   |
+| ---------------------- | ----------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| ساختار ریپو            | **pnpm workspace** (`apps/api`, `apps/web`, `packages/contracts`) | دو ریپوی جدا                               | اشتراک schema/type بدون کپی؛ یک PR برای تغییر API+UI                                      | اگر تیم‌های جدا با چرخه release جدا شدند                           |
+| Task runner            | فقط `pnpm -r` / `--filter`                                        | Turborepo/Nx                               | اضافه‌بار بی‌دلیل در شروع                                                                 | CI بیش از ~۵ دقیقه شد → Turborepo                                  |
+| UI                     | **shadcn/ui** (Radix) + Tailwind v4                               | کتابخانه‌های UI بسته (HeroUI، MUI)         | کد در پروژه، قابل‌شخصی‌سازی، RTL رسمی، اکوسیستم registry                                  | اگر Radix نگهداری‌اش افت کرد → `migrate-radix-to-base`             |
+| Server state           | **TanStack Query**                                                | Redux thunk                                | cache، retry، invalidation آماده؛ کد کمتر                                                 | —                                                                  |
+| Client state           | `useState`/Context؛ در صورت نیاز **Zustand**                      | Redux Toolkit                              | RTK برای state سراسری _کلاینتی_ کوچک، boilerplate سنگین است                               | اگر state سراسری پیچیده شد                                         |
+| فرم                    | **react-hook-form + Zod**                                         | Formik + Yup                               | الگوی رسمی shadcn؛ Formik تقریباً متروک؛ Zod مشترک با backend                             | —                                                                  |
+| Validation backend     | Zod + `createZodDto` و pipe **خودنوشت** (حدود ۲۵ خط)              | class-validator، `nestjs-zod`              | حذف دوگانگی با frontend؛ peer پکیج `nestjs-zod` تا Nest 11 است و با Nest 12 تست نشده      | اگر `nestjs-zod` رسماً Nest 12 را پشتیبانی کرد می‌توان جایگزین کرد |
+| تست backend            | **Vitest** (پیش‌فرض Nest 12)                                      | Jest                                       | Nest 12 با Vitest و ESM می‌آید؛ مهاجرت بی‌دلیل است                                        | —                                                                  |
+| Lint                   | **یک** ESLint در ریشه (+ `eslint-config-next` برای web)           | oxlint پیش‌فرض Nest، config جدا برای هر اپ | یک قانون برای کل ریپو                                                                     | —                                                                  |
+| نسخه TypeScript/ESLint | پین با **pnpm catalog** (`~6.0`، `~9.39`)                         | آخرین نسخه                                 | TS 7 و ESLint 10 زنجیره ابزار را می‌شکنند (بخش ۲۰)                                        | وقتی peerهای typescript-eslint/eslint-plugin-react پشتیبانی کردند  |
+| HTTP client            | `fetch` با wrapper نازک                                           | axios                                      | بدون وابستگی؛ با cache/streaming Next سازگار                                              | —                                                                  |
+| Auth                   | **JWT در httpOnly cookie** + refresh rotation                     | JWT در js-cookie ۹۰ روزه                   | محافظت از XSS، توکن کوتاه‌عمر                                                             | افزودن SSO/OAuth                                                   |
+| نقش‌ها                 | یک مدل User + `role` + RBAC                                       | سه strategy جدا                            | کد کمتر، یک مسیر auth                                                                     | —                                                                  |
+| Toast                  | **sonner**                                                        | react-toastify                             | استاندارد shadcn، RTL و تم داخلی                                                          | —                                                                  |
+| آیکون                  | **lucide-react**                                                  | iconsax-reactjs                            | کامپوننت‌های shadcn خودشان lucide دارند؛ ترکیب دو کتابخانه = ناهماهنگی                    | —                                                                  |
+| تاریخ                  | `Intl` (`fa-IR-u-ca-persian`) + `date-fns-jalali`/DayPicker       | jalali-moment                              | moment منسوخ و سنگین                                                                      | —                                                                  |
+| ارقام فارسی            | تابع ۶ خطی `normalizeDigits` در contracts                         | ap-to-english                              | یک بار در schema، نه در هر service                                                        | —                                                                  |
+| نام فایل               | **kebab-case** همه‌جا                                             | PascalCase.tsx                             | macOS بزرگ/کوچک را یکی می‌داند، Linux نه → باگ CI                                         | —                                                                  |
+| Export                 | **named export** (به‌جز فایل‌های ویژه Next)                       | default export                             | rename امن، auto-import دقیق                                                              | —                                                                  |
+| Barrel `index.ts`      | فقط در مرز feature                                                | در هر پوشه                                 | barrel زیاد = کندی build و dev                                                            | —                                                                  |
+| استقرار                | **PM2 + Caddy** روی سرور (بدون Docker)                            | Docker/Kubernetes                          | سادگی، دیباگ مستقیم، TLS خودکار با Caddy؛ Docker فقط اختیاری برای سرویس‌های dev           | اگر چند سرور یا autoscaling لازم شد                                |
+| Migration              | **migrate-mongo** (پوشه `apps/api/migrations`)                    | runner خودنوشت، `autoIndex` در prod        | ابزار استاندارد با changelog و قفل؛ تست drift ایندکس schema را با migration مقایسه می‌کند | —                                                                  |
+| عمر نشست               | refresh چرخشی با سقف **۷ روز بی‌فعالیتی** و **۳۰ روز مطلق**       | فقط ۳۰ روز لغزان                           | نشست دزدیده‌شده با refresh پیاپی تا ابد زنده نمی‌ماند                                     | —                                                                  |
+| CSRF                   | `SameSite=Lax` + `CrossSiteGuard` (هدر `Sec-Fetch-Site`)          | CSRF token                                 | لایه دوم بدون state؛ مرورگر هدر را می‌گذارد و اسکریپت نمی‌تواند جعلش کند                  | اگر فرم cross-site یا `SameSite=None` لازم شد → CSRF token         |
+| i18n                   | فقط فارسی، بدون کتابخانه                                          | next-intl از روز اول                       | هزینه بی‌مورد                                                                             | اولین نیاز به زبان دوم → next-intl (کلاس‌های logical آماده‌اند)    |
 
 > **قانون انحراف:** پیش‌فرض‌های پرتأثیر این سند **مونوریپو، Zod مشترک و نبود Redux** هستند. اگر محصول جدا بودن ریپوها را الزام کند، `packages/contracts` را به‌صورت پکیج خصوصی منتشر کن و بقیه Blueprint را بدون تغییر نگه دار؛ این انحراف باید با تأیید کاربر و ADR باشد.
 
@@ -653,13 +656,8 @@ export class UsersController {
   ): Promise<ApiResponse<UserDto>> {
     return { data: await this.usersService.updateProfile(user.id, dto) };
   }
-
-  @Delete("me")
-  @HttpCode(204)
-  async deleteMe(@CurrentUser() user: AuthUser): Promise<void> {
-    await this.usersService.softDelete(user.id);
-  }
 }
+// حذف حساب اینجا نیست: با re-auth OTP در `POST /v1/auth/account/delete` (بخش ۸)
 ```
 
 قوانین:
@@ -968,15 +966,15 @@ Nest 12 پروژه را **ESM** می‌سازد: `"type": "module"`، `module/mo
 
 ### طراحی
 
-| مورد                    | تصمیم                                                                                   |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| ورود                    | OTP پیامکی (موبایل)                                                                     |
-| توکن دسترسی             | JWT، **۱۵ دقیقه**، کوکی `access_token`                                                  |
-| توکن refresh            | opaque (تصادفی)، **۳۰ روز**، کوکی `refresh_token`، در DB به‌صورت **hash** با `familyId` |
-| کوکی‌ها                 | `HttpOnly; SameSite=Lax; Secure` (در prod); `Path=/`                                    |
-| ذخیره در JS             | **هیچ‌چیز**. `js-cookie` و `localStorage` برای توکن ممنوع                               |
-| نقش‌ها                  | `user`, `business`, `admin` (فیلد `role`) — یک مسیر auth، نه سه                         |
-| Mobile app / API client | همان guard، توکن از `Authorization: Bearer` هم خوانده می‌شود                            |
+| مورد                    | تصمیم                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ورود                    | OTP پیامکی (موبایل)                                                                                                                                                     |
+| توکن دسترسی             | JWT، **۱۵ دقیقه**، کوکی `access_token`                                                                                                                                  |
+| توکن refresh            | opaque (تصادفی)، کوکی `refresh_token`، در DB به‌صورت **hash** با `familyId`؛ **۷ روز بی‌فعالیتی** (`SESSION_IDLE_MS`) و **۳۰ روز مطلق** از ورود (`SESSION_ABSOLUTE_MS`) |
+| کوکی‌ها                 | `HttpOnly; SameSite=Lax; Secure` (در prod); `Path=/`                                                                                                                    |
+| ذخیره در JS             | **هیچ‌چیز**. `js-cookie` و `localStorage` برای توکن ممنوع                                                                                                               |
+| نقش‌ها                  | `user`, `business`, `admin` (فیلد `role`) — یک مسیر auth، نه سه                                                                                                         |
+| Mobile app / API client | همان guard، توکن از `Authorization: Bearer` هم خوانده می‌شود                                                                                                            |
 
 > چرا عوض شد؟ توکن ۹۰ روزه در کوکی قابل‌خواندن با JS یعنی هر XSS = سرقت نشست سه‌ماهه، بدون امکان ابطال. با کوکی httpOnly + توکن کوتاه + refresh چرخشی، سرقت توکن عملاً بی‌اثر می‌شود.
 
@@ -988,7 +986,14 @@ Nest 12 پروژه را **ESM** می‌سازد: `"type": "module"`، `module/mo
 3. GET  /v1/auth/me                                 → { data: { user } }
 4. POST /v1/auth/refresh                            → کوکی‌های جدید (چرخش)
 5. POST /v1/auth/logout                             → پاک‌سازی کوکی‌ها + ابطال family
+6. POST /v1/auth/logout-all                         → ابطال همه نشست‌های کاربر (همه دستگاه‌ها)
+7. POST /v1/auth/reauth/request                     → ارسال OTP تأیید دوباره به موبایل خود کاربر
+8. POST /v1/auth/account/delete  { code }           → حذف حساب فقط با OTP تازه + ابطال همه نشست‌ها
 ```
+
+- `expiresAt` هر refresh جدید = کمینه «اکنون + ۷ روز» و «شروع family + ۳۰ روز»؛ بعد از سقف مطلق، ورود دوباره لازم است.
+- کارهای برگشت‌ناپذیر (حذف حساب) فقط با **re-auth با OTP** انجام می‌شوند، نه فقط با کوکی نشست؛ پس `@Delete("me")` بدون کد ممنوع است.
+- ابطال همه نشست‌ها با `userId` انجام شود؛ اگر `userId` در مدل رشته ذخیره شده، filter هر دو شکل رشته و `ObjectId` را پوشش دهد.
 
 ثبت‌نام و ورود **یک مسیر** هستند: اگر موبایل ناشناخته بود، بعد از verify کاربر ساخته می‌شود (و اگر پروفایل ناقص بود، فرانت به onboarding می‌رود).
 
@@ -1262,6 +1267,8 @@ export class JwtAuthGuard implements CanActivate {
 
 `SameSite=Lax` + بدنه JSON (preflight اجباری) + لیست مجاز CORS برای درخواست‌های تغییردهنده کافی است. اگر روزی از `SameSite=None` یا فرم‌های cross-site استفاده شد، CSRF token اضافه کن.
 
+لایه دوم، **الزامی**: `CrossSiteGuard` سراسری روی متدهای تغییردهنده (`POST/PUT/PATCH/DELETE`) درخواستی را که مرورگر با `Sec-Fetch-Site: cross-site` یا `same-site` فرستاده با 403 رد می‌کند (زیردامنه هم‌سایت هم اپ ما نیست). درخواست بدون این هدر (fetch سمت سرور Next، curl) رد نمی‌شود چون CSRF مرورگری نیست. استثنا (مثلاً callback درگاه پرداخت) فقط با `@AllowCrossSite()` صریح.
+
 ---
 
 ## ۹. Frontend — Next.js + shadcn
@@ -1443,7 +1450,7 @@ export default nextConfig;
 
 `[CERTAIN]` با `output: "standalone"`: `next start` **نادیده می‌گیرد** و `proxy.ts` هم در آن اجرا نمی‌شود. production را با `node .next/standalone/apps/web/server.js` اجرا کن و `.next/static` و `public` را با script `postbuild` به `.next/standalone/apps/web/` کپی کن (وگرنه JS بارگذاری نمی‌شود و صفحه hydrate نمی‌شود).
 
-با React Compiler فعال، `useMemo/useCallback/memo` دستی را ننویس مگر با دلیل measured. CSP با nonce مرحله بعدی است (پیوست ب).
+با React Compiler فعال، `useMemo/useCallback/memo` دستی را ننویس مگر با دلیل measured. CSP با **nonce** الزامی است: `proxy.ts` برای هر درخواست nonce تازه می‌سازد، هدر `Content-Security-Policy` را می‌گذارد و nonce را با هدر درخواست به layout می‌دهد (`script-src 'nonce-…' 'strict-dynamic'`؛ `unsafe-eval` فقط در development).
 
 ### API client
 
@@ -2097,6 +2104,11 @@ sudo systemctl reload caddy
 - [ ] لاگ شامل توکن/کد OTP/شماره کامل نباشد (mask).
 - [ ] وابستگی‌ها: lockfile commit، Renovate، `minimumReleaseAge`.
 - [ ] بکاپ و restore تست‌شده.
+- [ ] نشست: سقف بی‌فعالیتی و سقف مطلق؛ «خروج از همه دستگاه‌ها»؛ کار برگشت‌ناپذیر فقط با re-auth OTP.
+- [ ] `CrossSiteGuard` سراسری؛ CSP با nonce در `proxy.ts`.
+- [ ] Production بدون میان‌بر dev: `OTP_FIXED_CODE`، SMS کنسولی و پرداخت شبیه‌سازی‌شده در boot رد می‌شوند مگر با فلگ صریح (`ALLOW_DEV_AUTH`، `ALLOW_SIMULATED_PAYMENTS`) که فقط در `.env` سرور و موقت تنظیم شود.
+- [ ] SMS واقعی (مثلاً ملی‌پیامک با `SMS_PROVIDER=melipayamak` و الگوی OTP) پیش از اولین ورود کاربر واقعی.
+- [ ] Migration (`pnpm --filter <api> migrate`) در deploy قبل از `pm2 reload`؛ تست drift ایندکس در CI.
 
 ---
 
@@ -2120,6 +2132,15 @@ CORS_ORIGINS=http://localhost:7782
 SMS_PROVIDER=console
 OTP_FIXED_CODE=
 THROTTLE_ENABLED=true
+
+# SMS_PROVIDER=melipayamak needs these (OTP pattern body id from the panel)
+MELIPAYAMAK_API_KEY=
+MELIPAYAMAK_OTP_BODY_ID=
+MELIPAYAMAK_FROM=
+
+# temporary production escape hatches; keep false and set only in the server .env
+ALLOW_DEV_AUTH=false
+ALLOW_SIMULATED_PAYMENTS=false
 ```
 
 هنگام افزودن قابلیت‌ها (آپلود، پرداخت، SMS واقعی) کلیدهای آن‌ها را هم در `env.ts` (Zod) و `.env.example` اضافه کن؛ پیش از آن نباید در سند/ریپو باشند.
@@ -2305,7 +2326,7 @@ typecheck + lint + tests actually run and green, loading/empty/error states hand
 - بالا آمدن در `NODE_ENV=production` (نیازمند `SmsProvider` واقعی)؛ مکانیزم PM2 با `NODE_ENV=development` تست شد.
 - workflow گیت‌هاب (`ci.yml`) روی GitHub.
 - SMS واقعی، آپلود فایل، پرداخت، RBAC روی یک endpoint واقعی (فقط `RolesGuard` با تست unit).
-- تقویم شمسی در فرم، `migrate-mongo`، Sentry.
+- تقویم شمسی در فرم، Sentry. (`migrate-mongo` با تست e2e و تست drift ایندکس تأیید شده است.)
 
 ---
 
@@ -2317,7 +2338,6 @@ typecheck + lint + tests actually run and green, loading/empty/error states hand
 | -------------------------------------- | ----------------------------------------------------------------------- |
 | **Redis** (cache، throttler مشترک، صف) | بیش از یک instance API، یا نیاز به صف                                   |
 | **BullMQ** (صف کار)                    | کار طولانی/ارسال گروهی SMS/ایمیل، retry لازم                            |
-| **CSP با nonce** در `proxy.ts`         | قبل از production جدی؛ بعد از پایدار شدن UI                             |
 | **OpenAPI → client تولیدی**            | اگر کلاینت غیر-TS (موبایل) اضافه شد                                     |
 | **Feature flags**                      | نیاز به release تدریجی                                                  |
 | **Turborepo**                          | CI کند شد                                                               |
