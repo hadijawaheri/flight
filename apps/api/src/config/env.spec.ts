@@ -20,6 +20,16 @@ describe("validateEnv", () => {
     );
   });
 
+  it("accepts scoped preview wildcards in CORS_ORIGINS and rejects broad ones", () => {
+    const ok = validateEnv({
+      ...base,
+      CORS_ORIGINS: "https://app.example.com, https://app-*-team.vercel.app",
+    });
+    expect(ok.CORS_ORIGINS).toEqual(["https://app.example.com", "https://app-*-team.vercel.app"]);
+    expect(() => validateEnv({ ...base, CORS_ORIGINS: "https://*.vercel.app" })).toThrow();
+    expect(() => validateEnv({ ...base, CORS_ORIGINS: "*" })).toThrow();
+  });
+
   it("still rejects short secrets", () => {
     expect(() => validateEnv({ ...base, JWT_ACCESS_SECRET: "short" })).toThrow();
   });
