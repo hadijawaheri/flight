@@ -2,9 +2,10 @@ import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { resolveApiOrigin } from "@/lib/api-origin";
 import { buildCsp, createNonce, NONCE_HEADER } from "@/lib/csp";
 
-const API_ORIGIN = process.env.INTERNAL_API_URL ?? "http://localhost:7781";
+const API_ORIGIN = resolveApiOrigin();
 const PROTECTED_PREFIXES = ["/dashboard", "/checkout"];
 
 function redirectToSignIn(request: NextRequest): NextResponse {

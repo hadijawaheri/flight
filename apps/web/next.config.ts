@@ -1,10 +1,13 @@
 import type { NextConfig } from "next";
 
-const apiOrigin = process.env.INTERNAL_API_URL ?? "http://localhost:7781";
+import { resolveApiOrigin } from "./src/lib/api-origin";
+
+const apiOrigin = resolveApiOrigin();
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@flysmart/contracts"],
-  output: "standalone",
+  // Standalone is for PM2/self-hosting; Vercel produces its own output
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   poweredByHeader: false,
   reactCompiler: true,
   async rewrites() {
