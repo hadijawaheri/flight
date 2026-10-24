@@ -12,7 +12,7 @@ if ! grep -q '^ALLOW_DEV_AUTH=' apps/api/.env; then
 fi
 corepack enable
 pnpm install --frozen-lockfile
-# INTERNAL_API_URL is baked into the Next rewrites at build time
+# INTERNAL_API_URL (or NEXT_PUBLIC_API_URL) is baked into the Next rewrites at build time
 INTERNAL_API_URL="${INTERNAL_API_URL:-http://127.0.0.1:7791}" pnpm build
 # Production boots with autoIndex off: indexes and data migrations are applied here, before reload
 pnpm --filter @flysmart/api migrate
