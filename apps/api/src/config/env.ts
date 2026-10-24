@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isSafeOriginPattern } from "../common/cors.js";
+
 const flag = (fallback: "true" | "false") =>
   z
     .enum(["true", "false"])
@@ -21,10 +23,21 @@ const envSchema = z
     DATABASE_URL: z.string().startsWith("mongodb"),
     JWT_ACCESS_SECRET: z.string().min(32),
     OTP_HMAC_SECRET: z.string().min(32),
+    // Comma-separated. Browsers normally reach the API through the web origin's /api rewrite, so
+    // this only matters for direct calls; entries may hold a scoped `*` (see common/cors.ts)
     CORS_ORIGINS: z
       .string()
       .default("http://localhost:7782")
-      .transform((value) => value.split(",").map((origin) => origin.trim())),
+      .transform((value) =>
+        value
+          .split(",")
+          .map((origin) => origin.trim())
+          .filter((origin) => origin.length > 0),
+      )
+      .refine((origins) => origins.every(isSafeOriginPattern), {
+        message:
+          "CORS_ORIGINS: wildcards must be scoped to one hostname label, e.g. https://app-*-team.vercel.app",
+      }),
     SMS_PROVIDER: z.enum(["console", "melipayamak"]).default("console"),
     MELIPAYAMAK_API_KEY: optionalString,
     MELIPAYAMAK_OTP_BODY_ID: z.preprocess(

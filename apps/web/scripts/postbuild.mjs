@@ -3,6 +3,12 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// Vercel builds without `output: "standalone"`, so there is nothing to copy
+if (process.env.VERCEL) {
+  console.log("postbuild: skipped on Vercel.");
+  process.exit(0);
+}
+
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const standalone = join(root, ".next", "standalone", "apps", "web");
 

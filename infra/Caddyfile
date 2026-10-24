@@ -19,3 +19,14 @@
 		output file /var/log/caddy/app.log
 	}
 }
+
+# Frontend on Vercel (docs/deployment.md): expose the API on its own HTTPS hostname.
+# Set the real hostname in place of api.example.com, then reload Caddy.
+# api.example.com {
+# 	encode zstd gzip
+# 	reverse_proxy 127.0.0.1:7791
+# 	header {
+# 		-Server
+# 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+# 	}
+# }
