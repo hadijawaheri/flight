@@ -7,3 +7,4 @@ process.env.THROTTLE_ENABLED ??= "false";
 process.env.ALERTS_WATCHER_ENABLED = "false";
 process.env.BOOKING_EXPIRER_ENABLED = "false";
 process.env.ANTHROPIC_API_KEY = "";
+process.env.CRON_SECRET = "test-cron-secret-0123456789";

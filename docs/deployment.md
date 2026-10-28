@@ -35,6 +35,16 @@
 5. Deploy. بعد از آن `/api/health` و ورود را روی آدرس Vercel امتحان کنید.
 6. چون rewrite در زمان build ثبت می‌شود، با تغییر `INTERNAL_API_URL` باید دوباره Deploy کنید.
 
+### زمان‌بندی کارهای پس‌زمینه (هشدار قیمت، تلاش دوباره‌ی پیامک، انقضای رزرو)
+
+تایمرهای داخل API فقط وقتی کار می‌کنند که API یک پردازش دائمی داشته باشد (PM2). اگر API روی Vercel (serverless) اجرا شود، این کارها با درخواست HTTP به `/api/jobs/price-alerts` و `/api/jobs/expire-bookings` اجرا می‌شوند:
+
+1. یک مقدار تصادفی بسازید (`openssl rand -hex 32`) و همان را در سه جا بگذارید: `CRON_SECRET` در Environment Variables پروژه‌ی API، `CRON_SECRET` در پروژه‌ی وب روی Vercel، و GitHub → Settings → Secrets and variables → Actions → Secret به نام `CRON_SECRET`.
+2. در همان صفحه‌ی GitHub یک Variable به نام `JOBS_BASE_URL` با آدرس سایت (مثلاً `https://flysmart.vercel.app`) بسازید.
+3. `apps/web/vercel.json` روزی یک‌بار هر دو مسیر را صدا می‌زند (پلن رایگان Vercel بیشتر از این اجازه نمی‌دهد). اجرای هر ۱۵ دقیقه با `.github/workflows/scheduled-jobs.yml` انجام می‌شود. در پلن Pro می‌توانید زمان‌بندی `vercel.json` را `*/15 * * * *` کنید و workflow را حذف کنید.
+
+بدون `CRON_SECRET` این مسیرها ۴۰۴ می‌دهند و workflow کاری نمی‌کند. اجرای هم‌زمان تایمر و زمان‌بند مشکلی ندارد، چون هر هشدار و هر پیامک با یک به‌روزرسانی شرطی برداشته می‌شود.
+
 ### ریسک‌ها
 
 - دسترسی از ایران: GitHub و Vercel هر دو شرکت آمریکایی‌اند و تحریم‌ها ممکن است حساب یا دسترسی را محدود کنند؛ از طرف Vercel سند رسمی روشنی که بگوید دسترسی بازدیدکنندگان ایرانی محدود است پیدا نشد (فقط گزارش کاربران). حتماً از داخل ایران و بدون VPN تست کنید. اگر دسترسی مشکل داشت، همان مسیر قبلی (سرور + Caddy، یا Cloudflare Worker) را نگه دارید.

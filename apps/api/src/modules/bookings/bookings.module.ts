@@ -18,6 +18,6 @@ import { Booking, BookingSchemaDef } from "./schemas/booking.schema.js";
   ],
   controllers: [BookingsController],
   providers: [BookingsService, BookingsExpirer],
-  exports: [BookingsService],
+  exports: [BookingsService, BookingsExpirer],
 })
 export class BookingsModule {}

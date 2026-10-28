@@ -1,0 +1,28 @@
+name: scheduled-jobs
+# Runs the API's background sweeps when the API cannot keep its own timers (Vercel serverless).
+# Vercel Cron on the Hobby plan fires at most once a day, so this drives the frequent runs.
+# Needs repository variable JOBS_BASE_URL (the web origin, e.g. https://flysmart.vercel.app)
+# and secret CRON_SECRET (same value as the API's). Without them every run is a no-op.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE_URL: ${{ vars.JOBS_BASE_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Price alerts and SMS retries
+        if: env.BASE_URL != '' && env.CRON_SECRET != ''
+        run: |
+          curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" "$BASE_URL/api/jobs/price-alerts"
+      - name: Expire unpaid bookings
+        if: env.BASE_URL != '' && env.CRON_SECRET != ''
+        run: |
+          curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" "$BASE_URL/api/jobs/expire-bookings"

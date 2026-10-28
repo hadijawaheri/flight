@@ -2,5 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter @flysmart/contracts build && pnpm --filter @flysmart/web build"
+  "buildCommand": "cd ../.. && pnpm --filter @flysmart/contracts build && pnpm --filter @flysmart/web build",
+  "crons": [
+    {
+      "path": "/api/jobs/price-alerts",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/jobs/expire-bookings",
+      "schedule": "30 4 * * *"
+    }
+  ]
 }
