@@ -26,6 +26,7 @@ import { Clock } from "../../common/clock/clock.js";
 import { FlightProvider, type FlightRecord } from "../../infra/flight/flight.provider.js";
 import { SALES_HORIZON_DAYS } from "../../infra/flight/simulation/pricing-model.js";
 import { InventoryService } from "../inventory/inventory.service.js";
+import { mergeHistory, PriceHistoryService } from "../price-history/price-history.service.js";
 import type {
   FareCalendarQueryDto,
   FlightQuoteQueryDto,
@@ -62,6 +63,7 @@ export class FlightsService {
     private readonly provider: FlightProvider,
     private readonly inventory: InventoryService,
     private readonly clock: Clock,
+    private readonly priceHistory: PriceHistoryService,
   ) {}
 
   /* ------------------------------- lookup helpers ------------------------------- */
@@ -124,6 +126,12 @@ export class FlightsService {
     if (query.times?.length)
       candidates = candidates.filter((record) => query.times?.includes(timeBucketOf(record)));
 
+    // Every open flight is a sample, including the ones the filters hide from this traveller
+    await this.priceHistory.record(
+      open.map((record) => ({ record, seatsLeft: seats.get(record.id)?.seatsLeft ?? null })),
+    );
+    const observed = await this.priceHistory.observedFor(candidates, HISTORY_DAYS);
+
     const types = expandMix(mix);
     const offers: FlightOfferDto[] = [];
     for (const record of candidates) {
@@ -132,7 +140,7 @@ export class FlightsService {
       const pricePerAdult = adultTotalFor(record, record.adultBaseFare);
       if (query.maxPrice !== undefined && pricePerAdult > query.maxPrice) continue;
 
-      const insight = await this.insightFor(record, entry.seatsLeft);
+      const insight = await this.insightFor(record, entry.seatsLeft, observed.get(record.id) ?? []);
       offers.push({
         ...toFlightSummary(record),
         seatsLeft: entry.seatsLeft,
@@ -166,6 +174,9 @@ export class FlightsService {
   async getOffer(id: string, query: FlightQuoteQueryDto): Promise<FlightOfferDto> {
     const record = await this.resolve(id);
     const entry = (await this.seatsOf([record])).get(record.id) as RecordWithSeats;
+    if (!isSalesClosed(record, this.clock.now())) {
+      await this.priceHistory.record([{ record, seatsLeft: entry.seatsLeft }]);
+    }
     const insight = await this.insightFor(record, entry.seatsLeft);
     return {
       ...toFlightSummary(record),
@@ -189,8 +200,9 @@ export class FlightsService {
   async priceAnalysis(id: string): Promise<PriceAnalysisDto> {
     const record = await this.resolve(id);
     const entry = (await this.seatsOf([record])).get(record.id) as RecordWithSeats;
-    const insight = await this.insightFor(record, entry.seatsLeft);
-    const history = await this.historyTotals(record);
+    const observed = (await this.priceHistory.observedFor([record], HISTORY_DAYS)).get(record.id);
+    const insight = await this.insightFor(record, entry.seatsLeft, observed ?? []);
+    const history = await this.historyTotals(record, observed ?? []);
     const forecast = await this.forecastTotals(record);
     const today = this.clock.today();
     const currentPrice = adultTotalFor(record, record.adultBaseFare);
@@ -273,6 +285,8 @@ export class FlightsService {
     const records = (
       await this.provider.search({ origins: [origin], destinations: [destination], date, cabin })
     ).filter((record) => !isSalesClosed(record, now));
+    // Alert sweeps revisit watched routes every 15 minutes: steady samples where travellers care
+    await this.priceHistory.record(records.map((record) => ({ record, seatsLeft: null })));
     let best: { record: FlightRecord; pricePerAdult: number } | null = null;
     for (const record of records) {
       const price = adultTotalFor(record, record.adultBaseFare);
@@ -281,8 +295,18 @@ export class FlightsService {
     return best;
   }
 
-  async insightFor(record: FlightRecord, seatsLeft: number): Promise<PriceInsight> {
-    const history = await this.historyTotals(record);
+  /** `observed` may be preloaded for a batch of flights; otherwise it is read for this one. */
+  async insightFor(
+    record: FlightRecord,
+    seatsLeft: number,
+    observed?: readonly PricePoint[],
+  ): Promise<PriceInsight> {
+    const history = await this.historyTotals(
+      record,
+      observed ??
+        (await this.priceHistory.observedFor([record], HISTORY_DAYS)).get(record.id) ??
+        [],
+    );
     const forecast = await this.forecastTotals(record);
     const demand = demandOf(record);
     return analyzePrice({
@@ -299,8 +323,12 @@ export class FlightsService {
 
   /* ----------------------------------- internals ----------------------------------- */
 
-  private async historyTotals(record: FlightRecord): Promise<PricePoint[]> {
-    const history = await this.provider.priceHistory(record, HISTORY_DAYS);
+  private async historyTotals(
+    record: FlightRecord,
+    observed: readonly PricePoint[],
+  ): Promise<PricePoint[]> {
+    const modelled = await this.provider.priceHistory(record, HISTORY_DAYS);
+    const history = mergeHistory(modelled, observed, this.clock.today(), HISTORY_DAYS);
     return history.map((point) => ({
       date: point.date,
       price: adultTotalFor(record, point.price),

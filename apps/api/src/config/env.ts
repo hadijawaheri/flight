@@ -52,6 +52,9 @@ const envSchema = z
     ANTHROPIC_BASE_URL: z.string().url().default("https://api.anthropic.com"),
     ASSISTANT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(30_000),
 
+    // Stores the fares the site sees (ADR 0014); off only to keep a throwaway demo database small
+    PRICE_HISTORY_ENABLED: flag("true"),
+
     // Background jobs; switched off in tests that need a quiet process
     ALERTS_WATCHER_ENABLED: flag("true"),
     BOOKING_EXPIRER_ENABLED: flag("true"),
