@@ -76,9 +76,13 @@ export class BookingPassenger {
   @Prop({ type: String, enum: NATIONALITY_CODES, default: "IR" })
   nationality?: NationalityCode;
 
-  // Null for foreigners, who identify with a passport instead
+  // Null for foreigners, who identify with a passport instead. Encrypted at rest (ADR 0012).
   @Prop({ type: String, default: null })
   nationalId!: string | null;
+
+  // Keyed hash used by the duplicate-traveller check
+  @Prop({ type: String, default: null })
+  nationalIdHash?: string | null;
 
   @Prop({ type: String, required: true })
   birthDate!: string;
@@ -86,8 +90,12 @@ export class BookingPassenger {
   @Prop({ type: String, enum: GENDERS, required: true })
   gender!: Gender;
 
+  // Encrypted at rest (ADR 0012)
   @Prop({ type: String, default: null })
   passportNumber!: string | null;
+
+  @Prop({ type: String, default: null })
+  passportNumberHash?: string | null;
 
   @Prop({ type: String, default: null })
   passportExpiry!: string | null;

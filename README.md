@@ -32,6 +32,7 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 # در apps/api/.env این‌ها را پر کنید:
 #   JWT_ACCESS_SECRET و OTP_HMAC_SECRET  ->  openssl rand -base64 48
+#   (در production الزامی) PII_ENCRYPTION_KEY  ->  openssl rand -base64 32
 #   (اختیاری) ANTHROPIC_API_KEY برای دستیار با Claude؛ خالی = حالت آفلاین
 
 pnpm build            # dev:all خروجی ساخته‌شده‌ی API را اجرا می‌کند
@@ -56,7 +57,7 @@ pnpm --filter @flysmart/web test:e2e   # Playwright + axe؛ نیاز به Mongo 
 ## نکته‌های امنیتی
 
 - فایل‌های `.env` را commit نکنید. کلیدها فقط در محیط سرور قرار می‌گیرند و توکن‌ها در کوکی httpOnly هستند.
-- کد ملی و شماره‌ی گذرنامه‌ی مسافران فعلاً **رمزنگاری‌نشده** در دیتابیس ذخیره می‌شود؛ پیش از production رمزنگاری سطح فیلد اضافه کنید.
+- کد ملی و شماره‌ی گذرنامه‌ی مسافران با AES-256-GCM **رمزنگاری‌شده** در دیتابیس ذخیره می‌شود (`docs/adr/0012-encrypt-passenger-identity-numbers.md`). کلید آن `PII_ENCRYPTION_KEY` است: در production الزامی است و اگر گم شود این اطلاعات دیگر خواندنی نیست، پس کنار رمز دیتابیس از آن نسخه‌ی پشتیبان نگه دارید.
 
 ## وضعیت راستی‌آزمایی و تحویل
 

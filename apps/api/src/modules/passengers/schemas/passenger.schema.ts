@@ -30,9 +30,13 @@ export class Passenger {
   @Prop({ type: String, enum: NATIONALITY_CODES, default: "IR" })
   nationality?: NationalityCode;
 
-  // Null for foreigners, who identify with a passport instead
+  // Null for foreigners, who identify with a passport instead. Encrypted at rest (ADR 0012).
   @Prop({ type: String, default: null })
   nationalId!: string | null;
+
+  // Keyed hash of the national code: uniqueness and lookups without decrypting
+  @Prop({ type: String, default: null })
+  nationalIdHash?: string | null;
 
   // ISO date (YYYY-MM-DD); a birth date has no time zone
   @Prop({ type: String, required: true })
@@ -41,8 +45,12 @@ export class Passenger {
   @Prop({ type: String, enum: GENDERS, required: true })
   gender!: Gender;
 
+  // Encrypted at rest (ADR 0012)
   @Prop({ type: String, default: null })
   passportNumber!: string | null;
+
+  @Prop({ type: String, default: null })
+  passportNumberHash?: string | null;
 
   @Prop({ type: String, default: null })
   passportExpiry!: string | null;
@@ -61,16 +69,19 @@ export type PassengerDocument = HydratedDocument<Passenger>;
 export const PassengerSchema = SchemaFactory.createForClass(Passenger);
 PassengerSchema.plugin(softDeletePlugin);
 // Partial filters keep the uniqueness rules away from the passengers that have no such field
-// (foreigners have no national code); key order differs from the retired userId+nationalId index
-// on purpose so both can exist while an old deployment is migrated.
+// (foreigners have no national code). The values themselves are encrypted with a random IV, so
+// uniqueness is enforced on their blind indexes; the plaintext-era indexes are dropped by migration 0002.
 PassengerSchema.index(
-  { nationalId: 1, userId: 1 },
-  { unique: true, partialFilterExpression: { deletedAt: null, nationalId: { $type: "string" } } },
-);
-PassengerSchema.index(
-  { userId: 1, nationality: 1, passportNumber: 1 },
+  { nationalIdHash: 1, userId: 1 },
   {
     unique: true,
-    partialFilterExpression: { deletedAt: null, passportNumber: { $type: "string" } },
+    partialFilterExpression: { deletedAt: null, nationalIdHash: { $type: "string" } },
+  },
+);
+PassengerSchema.index(
+  { userId: 1, nationality: 1, passportNumberHash: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { deletedAt: null, passportNumberHash: { $type: "string" } },
   },
 );

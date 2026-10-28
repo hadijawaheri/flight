@@ -10,6 +10,7 @@ import { LoggerModule } from "nestjs-pino";
 import { stdTimeFunctions } from "pino";
 
 import { ClockModule } from "./common/clock/clock.module.js";
+import { PiiModule } from "./common/crypto/pii.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
 import { CrossSiteGuard } from "./common/guards/cross-site.guard.js";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
@@ -78,6 +79,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     }),
     JwtModule.register({ global: true }),
     ClockModule,
+    PiiModule,
     FlightProviderModule,
     PaymentProviderModule,
     LlmModule,

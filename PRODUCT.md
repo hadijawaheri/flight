@@ -33,5 +33,5 @@ what happens before and around the purchase: it tells you whether to buy now or 
 
 ## Out of scope / simulated
 
-Real flight inventory and payment gateway (both simulated behind provider interfaces), SMS delivery of alerts,
-at-rest encryption of passenger identity data (must be added before real use).
+Real flight inventory and payment gateway (both simulated behind provider interfaces), SMS delivery of alerts.
+National codes and passport numbers are encrypted at rest (ADR 0012).

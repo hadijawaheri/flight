@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { decodeMasterKey } from "../common/crypto/pii-cipher.js";
+
 const flag = (fallback: "true" | "false") =>
   z
     .enum(["true", "false"])
@@ -21,6 +23,12 @@ const envSchema = z
     DATABASE_URL: z.string().startsWith("mongodb"),
     JWT_ACCESS_SECRET: z.string().min(32),
     OTP_HMAC_SECRET: z.string().min(32),
+    // Encrypts national codes and passport numbers at rest (ADR 0012). Changing it makes stored
+    // identities unreadable, so it is backed up with the database credentials, never rotated casually.
+    PII_ENCRYPTION_KEY: optionalString.refine(
+      (value) => value === undefined || decodeMasterKey(value) !== null,
+      "PII_ENCRYPTION_KEY must be base64 of 32 random bytes (openssl rand -base64 32)",
+    ),
     CORS_ORIGINS: z
       .string()
       .default("http://localhost:7782")
@@ -66,6 +74,9 @@ const envSchema = z
         "OTP_FIXED_CODE and the console SMS provider are forbidden in production unless ALLOW_DEV_AUTH=true",
     },
   )
+  .refine((env) => env.NODE_ENV !== "production" || env.PII_ENCRYPTION_KEY !== undefined, {
+    message: "PII_ENCRYPTION_KEY is required in production",
+  })
   .refine(
     (env) =>
       env.ALLOW_DEV_AUTH ||
