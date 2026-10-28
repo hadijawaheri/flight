@@ -1,6 +1,7 @@
 import { PinoLogger } from "nestjs-pino";
 
-import { SmsProvider } from "./sms.provider.js";
+import type { PriceAlertSms, SmsDelivery } from "./sms.provider.js";
+import { priceAlertText, SmsProvider } from "./sms.provider.js";
 
 const BASE_URL = "https://console.melipayamak.com/api/send";
 const TIMEOUT_MS = 10_000;
@@ -9,7 +10,12 @@ export interface MelipayamakOptions {
   apiKey: string;
   /** Approved pattern ("shared" service) whose only variable is the code. */
   otpBodyId: number;
-  /** Dedicated line for free-text notifications; without it they are logged and skipped. */
+  /**
+   * Approved pattern for price alerts with three variables in this order: route, date, price.
+   * Preferred: operators deliver patterns from the shared line and do not filter them.
+   */
+  alertBodyId: number | undefined;
+  /** Dedicated line for a free-text alert when no pattern is approved yet. */
   from: string | undefined;
 }
 
@@ -34,12 +40,27 @@ export class MelipayamakSmsProvider extends SmsProvider {
     await this.post("shared", { bodyId: this.options.otpBodyId, to: mobile, args: [code] });
   }
 
-  async sendNotification(mobile: string, message: string): Promise<void> {
-    if (!this.options.from) {
-      this.logger.warn({ mobile }, "SMS notification skipped: MELIPAYAMAK_FROM is not set");
-      return;
+  async sendPriceAlert(mobile: string, alert: PriceAlertSms): Promise<SmsDelivery> {
+    if (this.options.alertBodyId) {
+      await this.post("shared", {
+        bodyId: this.options.alertBodyId,
+        to: mobile,
+        args: [alert.route, alert.date, alert.price],
+      });
+      return "SENT";
     }
-    await this.post("simple", { from: this.options.from, to: mobile, text: message });
+    if (this.options.from) {
+      await this.post("simple", {
+        from: this.options.from,
+        to: mobile,
+        text: priceAlertText(alert),
+      });
+      return "SENT";
+    }
+    this.logger.warn(
+      "Price alert SMS skipped: set MELIPAYAMAK_ALERT_BODY_ID (or MELIPAYAMAK_FROM)",
+    );
+    return "SKIPPED";
   }
 
   private async post(service: "shared" | "simple", body: Record<string, unknown>): Promise<void> {

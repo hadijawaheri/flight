@@ -1,5 +1,5 @@
-import type { Cabin, PriceAlertStatus } from "@flysmart/contracts";
-import { CABINS, PRICE_ALERT_STATUSES } from "@flysmart/contracts";
+import type { Cabin, PriceAlertSmsStatus, PriceAlertStatus } from "@flysmart/contracts";
+import { CABINS, PRICE_ALERT_SMS_STATUSES, PRICE_ALERT_STATUSES } from "@flysmart/contracts";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
 import { Types } from "mongoose";
@@ -42,6 +42,24 @@ export class PriceAlert {
   @Prop({ type: String, default: null })
   triggeredFlightId!: string | null;
 
+  // Null until the alert fires; a re-armed alert starts over
+  @Prop({ type: String, enum: [...PRICE_ALERT_SMS_STATUSES, null], default: null })
+  smsStatus!: PriceAlertSmsStatus | null;
+
+  @Prop({ type: Number, default: 0 })
+  smsAttempts!: number;
+
+  // When the current attempt started: a PENDING older than the lease belongs to a crashed process
+  @Prop({ type: Date, default: null })
+  smsClaimedAt!: Date | null;
+
+  @Prop({ type: Date, default: null })
+  smsSentAt!: Date | null;
+
+  // Operator or network error of the last failed attempt, for support; never shown to the traveller
+  @Prop({ type: String, default: null })
+  smsLastError!: string | null;
+
   createdAt!: Date;
   updatedAt!: Date;
 
@@ -54,3 +72,4 @@ export const PriceAlertSchema = SchemaFactory.createForClass(PriceAlert);
 PriceAlertSchema.plugin(softDeletePlugin);
 PriceAlertSchema.index({ userId: 1, status: 1, date: 1 });
 PriceAlertSchema.index({ status: 1, date: 1 });
+PriceAlertSchema.index({ status: 1, smsStatus: 1, triggeredAt: 1 });

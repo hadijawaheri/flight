@@ -19,7 +19,8 @@ what happens before and around the purchase: it tells you whether to buy now or 
 3. **Honest fares:** the stepped refund table, base/tax/service-fee breakdown and a 15-minute seat hold are
    visible before payment; the fare is re-checked at booking (409 `FARE_CHANGED`).
 4. **Traveller vault:** save passengers once; checkout fills in with one choice.
-5. **Price alerts and budget explorer:** a target price per route/day; "where can I go for X?" over the next 30 days.
+5. **Price alerts and budget explorer:** a target price per route/day, texted by SMS when reached (retried, with
+   the delivery shown on the alert); "where can I go for X?" over the next 30 days.
 
 ## Surfaces
 
@@ -33,5 +34,5 @@ what happens before and around the purchase: it tells you whether to buy now or 
 
 ## Out of scope / simulated
 
-Real flight inventory and payment gateway (both simulated behind provider interfaces), SMS delivery of alerts.
-National codes and passport numbers are encrypted at rest (ADR 0012).
+Real flight inventory and payment gateway (both simulated behind provider interfaces). Alerts are texted through
+Melipayamak (ADR 0013). National codes and passport numbers are encrypted at rest (ADR 0012).

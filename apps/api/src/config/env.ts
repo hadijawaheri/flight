@@ -39,6 +39,11 @@ const envSchema = z
       (value) => (value === "" ? undefined : value),
       z.coerce.number().int().positive().optional(),
     ),
+    // Approved pattern for price alerts: three variables, in order route, date, price
+    MELIPAYAMAK_ALERT_BODY_ID: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    ),
     MELIPAYAMAK_FROM: optionalString,
     OTP_FIXED_CODE: z.string().length(6).optional(),
     ALLOW_DEV_AUTH: flag("false"),
@@ -59,6 +64,9 @@ const envSchema = z
     ANTHROPIC_MODEL: z.string().min(1).default("claude-sonnet-5-5"),
     ANTHROPIC_BASE_URL: z.string().url().default("https://api.anthropic.com"),
     ASSISTANT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(30_000),
+
+    // Stores the fares the site sees (ADR 0014); off only to keep a throwaway demo database small
+    PRICE_HISTORY_ENABLED: flag("true"),
 
     // Background jobs; switched off in tests that need a quiet process
     ALERTS_WATCHER_ENABLED: flag("true"),
