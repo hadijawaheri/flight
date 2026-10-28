@@ -31,6 +31,11 @@ const envSchema = z
       (value) => (value === "" ? undefined : value),
       z.coerce.number().int().positive().optional(),
     ),
+    // Approved pattern for price alerts: three variables, in order route, date, price
+    MELIPAYAMAK_ALERT_BODY_ID: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    ),
     MELIPAYAMAK_FROM: optionalString,
     OTP_FIXED_CODE: z.string().length(6).optional(),
     ALLOW_DEV_AUTH: flag("false"),

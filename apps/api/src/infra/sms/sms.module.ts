@@ -23,8 +23,14 @@ import { SmsProvider } from "./sms.provider.js";
           if (!apiKey || !otpBodyId) {
             throw new Error("MELIPAYAMAK_API_KEY and MELIPAYAMAK_OTP_BODY_ID are required");
           }
+          const alertBodyId = config.get("MELIPAYAMAK_ALERT_BODY_ID", { infer: true });
           const from = config.get("MELIPAYAMAK_FROM", { infer: true });
-          return new MelipayamakSmsProvider({ apiKey, otpBodyId, from }, logger);
+          if (!alertBodyId && !from) {
+            logger.warn(
+              "No price-alert SMS channel: set MELIPAYAMAK_ALERT_BODY_ID (or MELIPAYAMAK_FROM)",
+            );
+          }
+          return new MelipayamakSmsProvider({ apiKey, otpBodyId, alertBodyId, from }, logger);
         }
         throw new Error(`SMS provider "${provider}" is not implemented yet`);
       },

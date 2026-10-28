@@ -89,6 +89,7 @@ pm2 set pm2-logrotate:retain 30
 SMS_PROVIDER=melipayamak
 MELIPAYAMAK_API_KEY=<کلید کنسول>
 MELIPAYAMAK_OTP_BODY_ID=<شناسه‌ی الگوی تأییدشده با یک متغیر برای کد>
+MELIPAYAMAK_ALERT_BODY_ID=<شناسه‌ی الگوی هشدار قیمت با سه متغیر: مسیر، تاریخ، قیمت>
 OTP_FIXED_CODE=
 ALLOW_DEV_AUTH=false
 ALLOW_SIMULATED_PAYMENTS=true
