@@ -4,12 +4,16 @@ import {
   expandAirportCode,
   formatToman,
   getRoute,
+  isoToJalali,
+  JALALI_MONTH_NAMES,
   locationLabel,
   MAX_ACTIVE_ALERTS,
+  MAX_ALERT_SMS_ATTEMPTS,
 } from "@flysmart/contracts";
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { Model, type QueryFilter, Types } from "mongoose";
+import { PinoLogger } from "nestjs-pino";
 
 import { AppException } from "../../common/app-exception.js";
 import { Clock } from "../../common/clock/clock.js";
@@ -24,6 +28,24 @@ import { PriceAlert } from "./schemas/price-alert.schema.js";
 
 const NOT_FOUND = "هشدار قیمت یافت نشد";
 const MAX_PER_SWEEP = 500;
+// A text about a fare from yesterday is noise; after this the attempt is abandoned
+const SMS_RETRY_WINDOW_MS = 24 * 60 * 60_000;
+// An attempt still PENDING after this died with its process and may be taken over
+const SMS_LEASE_MS = 10 * 60_000;
+const SMS_RESET = {
+  smsStatus: null,
+  smsAttempts: 0,
+  smsClaimedAt: null,
+  smsSentAt: null,
+  smsLastError: null,
+};
+
+const faDigits = new Intl.NumberFormat("fa-IR", { useGrouping: false });
+
+function jalaliDayMonth(iso: string): string {
+  const { month, day } = isoToJalali(iso);
+  return `${faDigits.format(day)} ${JALALI_MONTH_NAMES[month - 1] ?? ""}`;
+}
 
 type Lookup = { pricePerAdult: number; flightId: string } | null;
 
@@ -41,6 +63,7 @@ export class PriceAlertsService {
     private readonly users: UsersService,
     private readonly sms: SmsProvider,
     private readonly clock: Clock,
+    private readonly logger: PinoLogger,
   ) {}
 
   async list(userId: string): Promise<PriceAlertDto[]> {
@@ -108,6 +131,7 @@ export class PriceAlertsService {
             triggeredAt: null,
             triggeredPrice: null,
             triggeredFlightId: null,
+            ...SMS_RESET,
           },
         },
         { returnDocument: "after" },
@@ -131,7 +155,7 @@ export class PriceAlertsService {
   }
 
   /** One pass of the watcher: expire stale alerts and fire the ones whose price has been reached. */
-  async checkAll(): Promise<{ checked: number; triggered: number }> {
+  async checkAll(): Promise<{ checked: number; triggered: number; smsRetried: number }> {
     const today = this.clock.today();
     await this.alertModel.updateMany(
       { status: "ACTIVE", date: { $lt: today } },
@@ -148,7 +172,39 @@ export class PriceAlertsService {
     for (const alert of alerts) {
       if (await this.evaluate(alert, cache)) triggered += 1;
     }
-    return { checked: alerts.length, triggered };
+    return { checked: alerts.length, triggered, smsRetried: await this.retrySms() };
+  }
+
+  /** Re-sends texts that failed (operator down, timeout) or whose sender crashed mid-attempt. */
+  async retrySms(): Promise<number> {
+    const now = this.clock.now();
+    const due = await this.alertModel
+      .find({
+        status: "TRIGGERED",
+        date: { $gte: this.clock.today() },
+        triggeredAt: { $gte: new Date(now.getTime() - SMS_RETRY_WINDOW_MS) },
+        smsAttempts: { $lt: MAX_ALERT_SMS_ATTEMPTS },
+        $or: [
+          { smsStatus: "FAILED" },
+          { smsStatus: "PENDING", smsClaimedAt: { $lt: new Date(now.getTime() - SMS_LEASE_MS) } },
+        ],
+      })
+      .limit(MAX_PER_SWEEP)
+      .lean();
+
+    let retried = 0;
+    for (const alert of due) {
+      // Conditional on the state just read, so two sweeps never both send the same text
+      const claimed = await this.claimSms(alert._id, {
+        smsStatus: alert.smsStatus,
+        smsAttempts: alert.smsAttempts,
+        smsClaimedAt: alert.smsClaimedAt,
+      });
+      if (!claimed) continue;
+      await this.sendSms(claimed);
+      retried += 1;
+    }
+    return retried;
   }
 
   private async evaluate(alert: PriceAlert, cache: Map<string, Lookup>): Promise<boolean> {
@@ -156,30 +212,82 @@ export class PriceAlertsService {
     const found = await this.lowest(alert, cache);
     if (!found || found.pricePerAdult > alert.targetPrice) return false;
 
-    // Conditional update: two sweeps (or a sweep and a create) must not both notify
-    const result = await this.alertModel.updateOne(
-      { _id: alert._id, status: "ACTIVE" },
-      {
-        $set: {
-          status: "TRIGGERED",
-          triggeredAt: this.clock.now(),
-          triggeredPrice: found.pricePerAdult,
-          triggeredFlightId: found.flightId,
+    // Conditional update: two sweeps (or a sweep and a create) must not both notify. The
+    // first SMS attempt is claimed in the same write.
+    const now = this.clock.now();
+    const triggered = await this.alertModel
+      .findOneAndUpdate(
+        { _id: alert._id, status: "ACTIVE" },
+        {
+          $set: {
+            status: "TRIGGERED",
+            triggeredAt: now,
+            triggeredPrice: found.pricePerAdult,
+            triggeredFlightId: found.flightId,
+            ...SMS_RESET,
+            smsStatus: "PENDING",
+            smsAttempts: 1,
+            smsClaimedAt: now,
+          },
         },
-      },
-    );
-    if (result.matchedCount === 0) return false;
+        { returnDocument: "after" },
+      )
+      .lean();
+    if (!triggered) return false;
 
-    await this.notify(alert, found.pricePerAdult).catch(() => undefined);
+    await this.sendSms(triggered);
     return true;
   }
 
-  private async notify(alert: PriceAlert, price: number): Promise<void> {
-    const user = await this.users.getById(alert.userId.toString());
-    const route = `${locationLabel(alert.origin)} به ${locationLabel(alert.destination)}`;
-    await this.sms.sendNotification(
-      user.mobile,
-      `قیمت بلیت ${route} به ${formatToman(price)} رسید. برای خرید وارد پرواز پلاس شوید.`,
+  private async claimSms(
+    id: Types.ObjectId,
+    seen: Pick<PriceAlert, "smsStatus" | "smsAttempts" | "smsClaimedAt">,
+  ): Promise<PriceAlert | null> {
+    const filter: QueryFilter<PriceAlertDocument> = {
+      _id: id,
+      status: "TRIGGERED",
+      smsStatus: seen.smsStatus,
+      smsAttempts: seen.smsAttempts,
+      smsClaimedAt: seen.smsClaimedAt,
+    };
+    return this.alertModel
+      .findOneAndUpdate(
+        filter,
+        {
+          $set: { smsStatus: "PENDING", smsClaimedAt: this.clock.now() },
+          $inc: { smsAttempts: 1 },
+        },
+        { returnDocument: "after" },
+      )
+      .lean();
+  }
+
+  /** Sends one claimed attempt and records the outcome; never throws into the trigger path. */
+  private async sendSms(alert: PriceAlert): Promise<void> {
+    let outcome: Partial<PriceAlert>;
+    try {
+      const user = await this.users.getById(alert.userId.toString());
+      const delivery = await this.sms.sendPriceAlert(user.mobile, {
+        route: `${locationLabel(alert.origin)} به ${locationLabel(alert.destination)}`,
+        date: jalaliDayMonth(alert.date),
+        price: formatToman(alert.triggeredPrice ?? alert.targetPrice),
+      });
+      outcome =
+        delivery === "SENT"
+          ? { smsStatus: "SENT", smsSentAt: this.clock.now(), smsLastError: null }
+          : { smsStatus: "SKIPPED", smsLastError: null };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        { alertId: alert._id.toString(), attempt: alert.smsAttempts, err: error },
+        "Price alert SMS failed",
+      );
+      outcome = { smsStatus: "FAILED", smsLastError: message.slice(0, 300) };
+    }
+    // Scoped to this attempt: a re-armed or deleted alert must not get a stale outcome
+    await this.alertModel.updateOne(
+      { _id: alert._id, smsStatus: "PENDING", smsAttempts: alert.smsAttempts },
+      { $set: outcome },
     );
   }
 
@@ -219,6 +327,12 @@ export class PriceAlertsService {
       triggeredAt: alert.triggeredAt ? alert.triggeredAt.toISOString() : null,
       triggeredPrice: alert.triggeredPrice,
       triggeredFlightId: alert.triggeredFlightId,
+      sms: alert.smsStatus
+        ? {
+            status: alert.smsStatus,
+            sentAt: alert.smsSentAt ? alert.smsSentAt.toISOString() : null,
+          }
+        : null,
       createdAt: alert.createdAt.toISOString(),
     };
   }

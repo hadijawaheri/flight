@@ -1,9 +1,9 @@
 "use client";
 
-import type { PriceAlertDto, PriceAlertStatus } from "@flysmart/contracts";
+import type { PriceAlertDto, PriceAlertSmsStatus, PriceAlertStatus } from "@flysmart/contracts";
 import { tomanToRial } from "@flysmart/contracts";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BellIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { BellIcon, MessageSquareIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -61,6 +61,13 @@ const STATUS_STYLES: Record<PriceAlertStatus, string> = {
   ACTIVE: "bg-brand-soft text-brand-ink",
   TRIGGERED: "bg-warning-soft text-warning-ink",
   EXPIRED: "bg-muted text-muted-foreground",
+};
+
+// SKIPPED means this deployment sends no alert texts, which is not news to the traveller
+const SMS_LABELS: Partial<Record<PriceAlertSmsStatus, string>> = {
+  PENDING: "در حال فرستادن پیامک…",
+  SENT: "پیامک برایتان فرستاده شد",
+  FAILED: "فرستادن پیامک انجام نشد؛ قیمت را همین‌جا ببینید",
 };
 
 export function PriceAlertsManager() {
@@ -153,6 +160,12 @@ export function PriceAlertsManager() {
                   </dd>
                 </div>
               </dl>
+              {alert.status === "TRIGGERED" && alert.sms && SMS_LABELS[alert.sms.status] && (
+                <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                  <MessageSquareIcon className="size-3.5" aria-hidden />
+                  {SMS_LABELS[alert.sms.status]}
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 {alert.status === "TRIGGERED" && alert.triggeredFlightId && (
                   <Button asChild size="sm">

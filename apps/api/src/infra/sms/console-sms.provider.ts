@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { PinoLogger } from "nestjs-pino";
 
-import { SmsProvider } from "./sms.provider.js";
+import type { PriceAlertSms, SmsDelivery } from "./sms.provider.js";
+import { priceAlertText, SmsProvider } from "./sms.provider.js";
 
 @Injectable()
 export class ConsoleSmsProvider extends SmsProvider {
@@ -15,8 +16,11 @@ export class ConsoleSmsProvider extends SmsProvider {
     return Promise.resolve();
   }
 
-  sendNotification(mobile: string, message: string): Promise<void> {
-    this.logger.info({ mobile, message }, "SMS notification (console provider)");
-    return Promise.resolve();
+  sendPriceAlert(mobile: string, alert: PriceAlertSms): Promise<SmsDelivery> {
+    this.logger.info(
+      { mobile, message: priceAlertText(alert) },
+      "Price alert SMS (console provider)",
+    );
+    return Promise.resolve("SENT");
   }
 }
