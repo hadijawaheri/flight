@@ -63,6 +63,11 @@ const envSchema = z
     // Background jobs; switched off in tests that need a quiet process
     ALERTS_WATCHER_ENABLED: flag("true"),
     BOOKING_EXPIRER_ENABLED: flag("true"),
+    // Bearer secret for /v1/jobs/* (Vercel Cron, GitHub Actions); unset means those routes 404
+    CRON_SECRET: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.string().min(16).optional(),
+    ),
   })
   .refine(
     (env) =>

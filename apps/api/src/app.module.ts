@@ -27,6 +27,7 @@ import { AuthModule } from "./modules/auth/auth.module.js";
 import { BookingsModule } from "./modules/bookings/bookings.module.js";
 import { DealsModule } from "./modules/deals/deals.module.js";
 import { FlightsModule } from "./modules/flights/flights.module.js";
+import { JobsModule } from "./modules/jobs/jobs.module.js";
 import { KnowledgeModule } from "./modules/knowledge/knowledge.module.js";
 import { PassengersModule } from "./modules/passengers/passengers.module.js";
 import { PaymentsModule } from "./modules/payments/payments.module.js";
@@ -93,6 +94,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     PaymentsModule,
     KnowledgeModule,
     AssistantModule,
+    JobsModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },

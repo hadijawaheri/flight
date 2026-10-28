@@ -20,6 +20,12 @@ describe("validateEnv", () => {
     );
   });
 
+  it("treats an empty CRON_SECRET as unset and rejects a short one", () => {
+    expect(validateEnv({ ...base, CRON_SECRET: "" }).CRON_SECRET).toBeUndefined();
+    expect(() => validateEnv({ ...base, CRON_SECRET: "short" })).toThrow();
+    expect(validateEnv({ ...base, CRON_SECRET: "c".repeat(16) }).CRON_SECRET).toBe("c".repeat(16));
+  });
+
   it("still rejects short secrets", () => {
     expect(() => validateEnv({ ...base, JWT_ACCESS_SECRET: "short" })).toThrow();
   });
