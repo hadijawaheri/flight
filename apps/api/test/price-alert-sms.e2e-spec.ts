@@ -81,8 +81,8 @@ describe("price alert SMS (e2e)", () => {
     await alerts.retrySms();
     expect(send).not.toHaveBeenCalled();
 
-    const other = await fire(await signedInAgent(app));
     send.mockRejectedValue(new Error("down"));
+    const other = await fire(await signedInAgent(app));
     await alerts.retrySms();
     await alerts.retrySms();
     await alerts.retrySms();
