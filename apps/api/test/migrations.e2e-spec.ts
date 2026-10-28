@@ -27,6 +27,7 @@ describe("migrations (e2e)", () => {
 
     expect(await runMigrations(connection, MIGRATIONS, quiet)).toEqual([
       "0001-drop-legacy-passenger-national-id-index",
+      "0002-encrypt-passenger-identity-numbers",
     ]);
     const names = (await passengers.indexes()).map((index) => index.name);
     expect(names).not.toContain("userId_1_nationalId_1");

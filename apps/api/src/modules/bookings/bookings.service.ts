@@ -36,6 +36,7 @@ import { Model, Types } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";
 import { Clock } from "../../common/clock/clock.js";
+import { PiiCipher } from "../../common/crypto/pii-cipher.js";
 import { parseObjectId } from "../../common/database/object-id.js";
 import type { FlightRecord } from "../../infra/flight/flight.provider.js";
 import {
@@ -97,6 +98,7 @@ export class BookingsService {
     private readonly inventory: InventoryService,
     private readonly payments: PaymentsService,
     private readonly clock: Clock,
+    private readonly pii: PiiCipher,
   ) {}
 
   /* ---------------------------------- queries ---------------------------------- */
@@ -143,7 +145,7 @@ export class BookingsService {
   }
 
   async get(userId: string, id: string): Promise<BookingDto> {
-    return toBookingDto(await this.loadOwned(userId, id), this.clock.now());
+    return this.toDto(await this.loadOwned(userId, id), this.clock.now());
   }
 
   /* ---------------------------------- create ---------------------------------- */
@@ -330,13 +332,24 @@ export class BookingsService {
     return shortValidity;
   }
 
+  /** Identity numbers are decrypted only here, on the way out, and the mapper masks them. */
+  private toDto(booking: Booking, now: Date): BookingDto {
+    return toBookingDto(
+      { ...booking, passengers: booking.passengers.map((passenger) => this.pii.open(passenger)) },
+      now,
+    );
+  }
+
   private async assertNoDuplicateTravellers(
     plans: SlicePlan[],
     dto: CreateBookingDto,
   ): Promise<void> {
-    // Iranians are the same person by national code, foreigners by issuing country + passport
-    const nationalIds = dto.passengers.flatMap((passenger) =>
-      isIranian(passenger.nationality) && passenger.nationalId ? [passenger.nationalId] : [],
+    // Iranians are the same person by national code, foreigners by issuing country + passport.
+    // Stored numbers are encrypted, so the match is on their blind indexes.
+    const nationalIdHashes = dto.passengers.flatMap((passenger) =>
+      isIranian(passenger.nationality) && passenger.nationalId
+        ? [this.pii.blindIndex("nationalId", passenger.nationalId)]
+        : [],
     );
     const identities: QueryFilter<BookingDocument>[] = dto.passengers.flatMap((passenger) =>
       !isIranian(passenger.nationality) && passenger.passportNumber
@@ -345,14 +358,19 @@ export class BookingsService {
               passengers: {
                 $elemMatch: {
                   nationality: passenger.nationality,
-                  passportNumber: passenger.passportNumber,
+                  passportNumberHash: this.pii.blindIndex(
+                    "passportNumber",
+                    passenger.passportNumber,
+                  ),
                 },
               },
             },
           ]
         : [],
     );
-    if (nationalIds.length > 0) identities.push({ "passengers.nationalId": { $in: nationalIds } });
+    if (nationalIdHashes.length > 0) {
+      identities.push({ "passengers.nationalIdHash": { $in: nationalIdHashes } });
+    }
     if (identities.length === 0) return;
 
     const clash = await this.bookingModel
@@ -414,10 +432,12 @@ export class BookingsService {
         firstNameEn: passenger.firstNameEn,
         lastNameEn: passenger.lastNameEn,
         nationality: passenger.nationality,
-        nationalId: isIranian(passenger.nationality) ? (passenger.nationalId ?? null) : null,
+        ...this.pii.seal({
+          nationalId: isIranian(passenger.nationality) ? (passenger.nationalId ?? null) : null,
+          passportNumber: passenger.passportNumber ?? null,
+        }),
         birthDate: passenger.birthDate,
         gender: passenger.gender,
-        passportNumber: passenger.passportNumber ?? null,
         passportExpiry: passenger.passportExpiry ?? null,
         types,
         seats,
@@ -610,7 +630,7 @@ export class BookingsService {
     if (booking.status === "CONFIRMED") {
       // Paying twice is a double click, not a second purchase
       const existing = await this.payments.latestForBooking(booking._id);
-      if (existing) return { payment: existing, booking: toBookingDto(booking, now) };
+      if (existing) return { payment: existing, booking: this.toDto(booking, now) };
     }
     this.assertOpenForPayment(booking, now);
 
@@ -621,7 +641,7 @@ export class BookingsService {
       description: `رزرو ${booking.pnr}`,
       outcome: dto.outcome,
     });
-    if (payment.status !== "SUCCEEDED") return { payment, booking: toBookingDto(booking, now) };
+    if (payment.status !== "SUCCEEDED") return { payment, booking: this.toDto(booking, now) };
 
     try {
       await this.confirm(booking);

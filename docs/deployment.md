@@ -21,7 +21,7 @@
 ## ۲. API روی سرور (پیش‌نیاز Vercel)
 
 - API با PM2 روی سرور اجرا می‌شود (`infra/ecosystem.config.cjs`). برای Vercel باید از بیرون با HTTPS در دسترس باشد: یک دامنه (یا زیردامنه) روی سرور، Caddy با `reverse_proxy 127.0.0.1:7791` برای `api.<domain>`، سپس `https://api.<domain>/health` را بزنید.
-- در `apps/api/.env` سرور: `JWT_ACCESS_SECRET` و `OTP_HMAC_SECRET` تصادفی (`openssl rand -base64 48`)، `DATABASE_URL` به Mongo با replica set، `ALLOW_DEV_AUTH=false` و `OTP_FIXED_CODE` خالی برای سایت عمومی.
+- در `apps/api/.env` سرور: `JWT_ACCESS_SECRET` و `OTP_HMAC_SECRET` تصادفی (`openssl rand -base64 48`)، `PII_ENCRYPTION_KEY` تصادفی (`openssl rand -base64 32`؛ بدون آن migrate و API بالا نمی‌آیند، و اگر گم شود کد ملی و گذرنامه‌های ذخیره‌شده خواندنی نیستند، پس جای امنی جدا از سرور هم نگهش دارید)، `DATABASE_URL` به Mongo با replica set، `ALLOW_DEV_AUTH=false` و `OTP_FIXED_CODE` خالی برای سایت عمومی.
 - **هشدار:** `ALLOW_DEV_AUTH` حالا فقط در `apps/api/.env` تعیین می‌شود (اگر نباشد، `deploy.sh` برای حفظ رفتار قبلی `true` اضافه می‌کند). برای سایت عمومی: `SMS_PROVIDER=melipayamak` با `MELIPAYAMAK_API_KEY` و `MELIPAYAMAK_OTP_BODY_ID` (الگوی تأییدشده با یک متغیر برای کد)، `MELIPAYAMAK_ALERT_BODY_ID` برای پیامک هشدار قیمت (الگوی تأییدشده با سه متغیر به ترتیب مسیر، تاریخ و قیمت؛ متن پیشنهادی: «پرواز پلاس: بلیت {0} برای {1} به {2} رسید. برای خرید وارد سایت شوید.»؛ بدون آن هشدار فقط در داشبورد دیده می‌شود)، `OTP_FIXED_CODE` خالی، `ALLOW_DEV_AUTH=false` و تا وصل شدن درگاه واقعی `ALLOW_SIMULATED_PAYMENTS=true`. سپس `pm2 startOrReload infra/ecosystem.config.cjs --update-env`.
 
 ## ۳. Vercel (وب)

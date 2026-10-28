@@ -7,6 +7,7 @@ const base = {
   JWT_ACCESS_SECRET: "a".repeat(32),
   OTP_HMAC_SECRET: "b".repeat(32),
 };
+const piiKey = Buffer.alloc(32, 7).toString("base64");
 
 describe("validateEnv", () => {
   it("treats an empty ANTHROPIC_API_KEY as unset (offline assistant)", () => {
@@ -31,13 +32,16 @@ describe("validateEnv", () => {
   });
 
   it("forbids the mock payment provider in production", () => {
-    expect(() => validateEnv({ ...base, NODE_ENV: "production" })).toThrow();
+    expect(() =>
+      validateEnv({ ...base, NODE_ENV: "production", PII_ENCRYPTION_KEY: piiKey }),
+    ).toThrow(/mock payment/);
   });
 
   it("lets a demo keep simulated payments while sign-in uses real SMS", () => {
     const prod = {
       ...base,
       NODE_ENV: "production",
+      PII_ENCRYPTION_KEY: piiKey,
       SMS_PROVIDER: "melipayamak",
       MELIPAYAMAK_API_KEY: "key",
       MELIPAYAMAK_OTP_BODY_ID: "12345",
@@ -60,5 +64,27 @@ describe("validateEnv", () => {
         ALLOW_SIMULATED_PAYMENTS: "true",
       }),
     ).toThrow();
+  });
+
+  it("requires a well-formed PII encryption key in production only", () => {
+    const prod = {
+      ...base,
+      NODE_ENV: "production",
+      SMS_PROVIDER: "melipayamak",
+      MELIPAYAMAK_API_KEY: "key",
+      MELIPAYAMAK_OTP_BODY_ID: "12345",
+      ALLOW_SIMULATED_PAYMENTS: "true",
+    };
+    expect(() => validateEnv(prod)).toThrow(/PII_ENCRYPTION_KEY is required/);
+    expect(() => validateEnv({ ...prod, PII_ENCRYPTION_KEY: "" })).toThrow(/required/);
+    expect(validateEnv({ ...prod, PII_ENCRYPTION_KEY: piiKey }).PII_ENCRYPTION_KEY).toBe(piiKey);
+
+    expect(validateEnv(base).PII_ENCRYPTION_KEY).toBeUndefined();
+    expect(() => validateEnv({ ...base, PII_ENCRYPTION_KEY: "too-short" })).toThrow(
+      /32 random bytes/,
+    );
+    expect(() =>
+      validateEnv({ ...base, PII_ENCRYPTION_KEY: Buffer.alloc(16).toString("base64") }),
+    ).toThrow(/32 random bytes/);
   });
 });

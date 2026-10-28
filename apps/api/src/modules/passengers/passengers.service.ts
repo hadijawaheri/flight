@@ -5,6 +5,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 
 import { AppException } from "../../common/app-exception.js";
+import { PiiCipher } from "../../common/crypto/pii-cipher.js";
 import { parseObjectId } from "../../common/database/object-id.js";
 import type { CreatePassengerDto, UpdatePassengerDto } from "./dto/passenger.dto.js";
 import { toPassengerDto } from "./passengers.mapper.js";
@@ -26,7 +27,7 @@ const NOT_FOUND = "مسافر یافت نشد";
 
 function duplicateMessage(error: unknown): string {
   const pattern = (error as { keyPattern?: Record<string, unknown> }).keyPattern;
-  return pattern && "passportNumber" in pattern
+  return pattern && "passportNumberHash" in pattern
     ? "مسافری با این شماره گذرنامه قبلاً ذخیره شده است"
     : "مسافری با این کد ملی قبلاً ذخیره شده است";
 }
@@ -35,6 +36,7 @@ function duplicateMessage(error: unknown): string {
 export class PassengersService {
   constructor(
     @InjectModel(Passenger.name) private readonly passengerModel: Model<PassengerDocument>,
+    private readonly pii: PiiCipher,
   ) {}
 
   async list(userId: string): Promise<PassengerDto[]> {
@@ -42,7 +44,7 @@ export class PassengersService {
       .find({ userId: new Types.ObjectId(userId) })
       .sort({ isDefault: -1, createdAt: 1 })
       .lean();
-    return passengers.map(toPassengerDto);
+    return passengers.map((passenger) => toPassengerDto(this.pii.open(passenger)));
   }
 
   async create(userId: string, dto: CreatePassengerDto): Promise<PassengerDto> {
@@ -63,13 +65,16 @@ export class PassengersService {
         ...dto,
         firstNameFa: dto.firstNameFa ?? "",
         lastNameFa: dto.lastNameFa ?? "",
-        // A foreigner's field can only hold junk, and a stored value would claim a national identity
-        nationalId: isIranian(dto.nationality) ? (dto.nationalId ?? null) : null,
+        ...this.pii.seal({
+          // A foreigner's field can only hold junk, and a stored value would claim a national identity
+          nationalId: isIranian(dto.nationality) ? (dto.nationalId ?? null) : null,
+          passportNumber: dto.passportNumber ?? null,
+        }),
         userId: owner,
         isDefault,
       });
       if (isDefault) await this.clearOtherDefaults(owner, created._id);
-      return toPassengerDto(created.toObject());
+      return toPassengerDto(this.pii.open(created.toObject()));
     } catch (error: unknown) {
       if (isDuplicateKey(error)) throw new AppException(409, "CONFLICT", duplicateMessage(error));
       throw error;
@@ -82,8 +87,9 @@ export class PassengersService {
 
     // The body is partial, so only the merged result can say whether the passenger is still
     // identifiable (an Iranian needs a national code, a foreigner a passport)
-    const existing = await this.passengerModel.findOne({ _id: passengerId, userId: owner }).lean();
-    if (!existing) throw new AppException(404, "PASSENGER_NOT_FOUND", NOT_FOUND);
+    const stored = await this.passengerModel.findOne({ _id: passengerId, userId: owner }).lean();
+    if (!stored) throw new AppException(404, "PASSENGER_NOT_FOUND", NOT_FOUND);
+    const existing = this.pii.open(stored);
     const nationality = dto.nationality ?? existing.nationality;
     const issues = passengerIdentityIssues({
       nationality,
@@ -102,13 +108,13 @@ export class PassengersService {
       const updated = await this.passengerModel
         .findOneAndUpdate(
           { _id: passengerId, userId: owner },
-          { $set: isIranian(nationality) ? dto : { ...dto, nationalId: null } },
+          { $set: this.sealChanges(isIranian(nationality) ? dto : { ...dto, nationalId: null }) },
           { returnDocument: "after" },
         )
         .lean();
       if (!updated) throw new AppException(404, "PASSENGER_NOT_FOUND", NOT_FOUND);
       if (dto.isDefault) await this.clearOtherDefaults(owner, passengerId);
-      return toPassengerDto(updated);
+      return toPassengerDto(this.pii.open(updated));
     } catch (error: unknown) {
       if (isDuplicateKey(error)) throw new AppException(409, "CONFLICT", duplicateMessage(error));
       throw error;
@@ -134,6 +140,20 @@ export class PassengersService {
       if (next)
         await this.passengerModel.updateOne({ _id: next._id }, { $set: { isDefault: true } });
     }
+  }
+
+  /** Encrypts the identity numbers a PATCH touches; `undefined` means "not sent" and stays out. */
+  private sealChanges(changes: UpdatePassengerDto): Record<string, unknown> {
+    const sealed: Record<string, unknown> = { ...changes };
+    if (changes.nationalId !== undefined) {
+      sealed.nationalId = this.pii.encrypt("nationalId", changes.nationalId);
+      sealed.nationalIdHash = this.pii.blindIndex("nationalId", changes.nationalId);
+    }
+    if (changes.passportNumber !== undefined) {
+      sealed.passportNumber = this.pii.encrypt("passportNumber", changes.passportNumber);
+      sealed.passportNumberHash = this.pii.blindIndex("passportNumber", changes.passportNumber);
+    }
+    return sealed;
   }
 
   private async clearOtherDefaults(owner: Types.ObjectId, keep: Types.ObjectId): Promise<void> {
