@@ -33,7 +33,8 @@ const envSchema = z
       .string()
       .default("http://localhost:7782")
       .transform((value) => value.split(",").map((origin) => origin.trim())),
-    SMS_PROVIDER: z.enum(["console", "melipayamak"]).default("console"),
+    // disabled: production before an SMS vendor exists; sign-in answers 503 SMS_UNAVAILABLE
+    SMS_PROVIDER: z.enum(["console", "melipayamak", "disabled"]).default("console"),
     MELIPAYAMAK_API_KEY: optionalString,
     MELIPAYAMAK_OTP_BODY_ID: z.preprocess(
       (value) => (value === "" ? undefined : value),
