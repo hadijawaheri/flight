@@ -15,3 +15,6 @@ catalog:
   typescript: ~6.0.3
   # eslint-plugin-react (via eslint-config-next) does not support ESLint 10 yet
   eslint: ~9.39.0
+overrides:
+  # Security floors for transitive deps whose parents have not bumped yet (pnpm audit, 2026-11-10)
+  fast-uri@3: ^3.1.9
