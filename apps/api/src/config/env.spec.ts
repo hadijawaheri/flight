@@ -27,6 +27,14 @@ describe("validateEnv", () => {
     expect(validateEnv({ ...base, CRON_SECRET: "c".repeat(16) }).CRON_SECRET).toBe("c".repeat(16));
   });
 
+  it("defaults hotels and transfers to the simulation and refuses unknown suppliers at boot", () => {
+    const env = validateEnv(base);
+    expect(env.HOTEL_PROVIDER).toBe("simulation");
+    expect(env.TRANSFER_PROVIDER).toBe("simulation");
+    expect(() => validateEnv({ ...base, HOTEL_PROVIDER: "snapptrip" })).toThrow();
+    expect(() => validateEnv({ ...base, TRANSFER_PROVIDER: "unknown" })).toThrow();
+  });
+
   it("still rejects short secrets", () => {
     expect(() => validateEnv({ ...base, JWT_ACCESS_SECRET: "short" })).toThrow();
   });

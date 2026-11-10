@@ -55,6 +55,9 @@ const envSchema = z
     // Flights and payments run on simulated providers until real ones are connected
     FLIGHT_PROVIDER: z.enum(["simulation"]).default("simulation"),
     PAYMENT_PROVIDER: z.enum(["mock"]).default("mock"),
+    // Hotels and airport transfers start on simulated suppliers too (ADR 0016)
+    HOTEL_PROVIDER: z.enum(["simulation"]).default("simulation"),
+    TRANSFER_PROVIDER: z.enum(["simulation"]).default("simulation"),
 
     // Without a key the assistant answers from the knowledge base only (offline mode).
     // `ANTHROPIC_API_KEY=` in .env.example arrives as "", so empty must mean "unset".
