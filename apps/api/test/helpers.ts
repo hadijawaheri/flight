@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 
 import { addDaysIso, tehranToday } from "@flysmart/contracts";
+import { getConnectionToken } from "@nestjs/mongoose";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Test } from "@nestjs/testing";
+import type { Connection } from "mongoose";
 import request from "supertest";
 
 // AppModule is imported lazily: ConfigModule.forRoot validates env at import time,
@@ -19,6 +21,10 @@ export async function createTestApp(): Promise<NestExpressApplication> {
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
   await app.init();
+  // autoIndex builds indexes in the background; tests that rely on a unique index
+  // (duplicate checks, migrations) would race it on a slow runner
+  const connection = app.get<Connection>(getConnectionToken());
+  await Promise.all(Object.values(connection.models).map((model) => model.init()));
   return app;
 }
 
