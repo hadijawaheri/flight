@@ -100,6 +100,10 @@ export interface FoundOffer {
   pricePerAdult: number;
   fare: { total: number };
   seatsLeft: number;
+  departureUtc: string;
+  arrivalUtc: string;
+  international: boolean;
+  destination: { airportCode: string; utcOffsetMinutes: number };
 }
 
 export async function firstOffer(

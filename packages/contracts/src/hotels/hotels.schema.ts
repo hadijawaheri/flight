@@ -90,6 +90,17 @@ export type HotelSearchQuery = z.infer<typeof hotelSearchQuerySchema>;
 export const hotelStayQuerySchema = z.object(stayFields).superRefine(refineStay);
 export type HotelStayQuery = z.infer<typeof hotelStayQuerySchema>;
 
+export const createRoomHoldSchema = z
+  .object({
+    hotelId: z.string().trim().min(1),
+    roomId: z.string().trim().min(1),
+    ...stayFields,
+    /** The total the traveller saw; a different current price answers 409 FARE_CHANGED. */
+    quotedTotal: z.coerce.number().int().positive(),
+  })
+  .superRefine(refineStay);
+export type CreateRoomHoldInput = z.infer<typeof createRoomHoldSchema>;
+
 /* ---------------------------------- cancellation ---------------------------------- */
 
 export interface HotelCancellationTier {
@@ -168,4 +179,16 @@ export interface HotelSearchResultDto {
 
 export interface HotelDetailDto extends HotelOfferDto {
   rooms: RoomOfferDto[];
+}
+
+/** Rooms set aside for a traveller while they finish checkout. */
+export interface RoomHoldDto {
+  id: string;
+  hotelId: string;
+  roomId: string;
+  checkIn: string;
+  checkOut: string;
+  rooms: number;
+  total: number;
+  expiresAt: string;
 }
