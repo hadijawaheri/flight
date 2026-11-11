@@ -7,3 +7,4 @@ Date: 2026-11-10 · Status: accepted
 - **Why a secret and not `trust proxy`:** the API's hostname is public, and Vercel does not publish a fixed list of egress addresses, so trusting `X-Forwarded-For` from "the proxy" would let anyone pick their own address.
 - **Without the secret** nothing changes: the API ignores the header and behaves as before. Set the same `API_PROXY_SECRET` (`openssl rand -base64 48`) in `apps/api/.env` on the server and in the Vercel project.
 - Same design as Farsh (carpet ADR 0020) and Kronos (ADR 0016).
+- **Logs:** pino redacts `x-api-proxy-secret` like the cookie and authorization headers.

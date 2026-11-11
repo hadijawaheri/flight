@@ -57,6 +57,8 @@ import { UsersModule } from "./modules/users/users.module.js";
             redact: [
               "req.headers.authorization",
               "req.headers.cookie",
+              // Shared with the web app; anyone reading the logs could otherwise forge visitor addresses
+              'req.headers["x-api-proxy-secret"]',
               'res.headers["set-cookie"]',
             ],
             transport: nodeEnv === "development" ? { target: "pino-pretty" } : undefined,
