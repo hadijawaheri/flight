@@ -18,6 +18,7 @@ import {
   HOTEL_VERIFY_NOTICE,
   NOT_FOUND_ANSWER,
   STARTER_QUESTIONS,
+  TRANSFER_VERIFY_NOTICE,
   VERIFY_NOTICE,
 } from "./assistant.prompt.js";
 import type { ToolContext, ToolOutcome } from "./assistant-toolbox.js";
@@ -30,13 +31,18 @@ const MAX_MODEL_ROUNDS = 4;
 const MAX_ANSWER_TOKENS = 900;
 const GREETING = /^\s*(سلام|درود|hi|hello|hey)[\s!،.؟?]*$/i;
 
-/** Hotel rules vary by hotel, so the traveller is sent to the front desk instead of an airline. */
+const isHotelEntry = (entry: KnowledgeEntry): boolean =>
+  entry.category === "HOTELS_TRANSFERS" && entry.id.startsWith("hotel-");
+const isTransferEntry = (entry: KnowledgeEntry): boolean =>
+  entry.category === "HOTELS_TRANSFERS" && entry.id.startsWith("transfer-");
+
+/** Sends the traveller to whoever actually decides: the hotel, the transfer company or the airline. */
 function verifyNoticeFor(entries: readonly KnowledgeEntry[]): string | null {
   const unsure = entries.filter((entry) => entry.reliability !== "STANDARD");
   if (unsure.length === 0) return null;
-  return unsure.every((entry) => entry.category === "HOTELS_TRANSFERS")
-    ? HOTEL_VERIFY_NOTICE
-    : VERIFY_NOTICE;
+  if (unsure.every(isHotelEntry)) return HOTEL_VERIFY_NOTICE;
+  if (unsure.every(isTransferEntry)) return TRANSFER_VERIFY_NOTICE;
+  return VERIFY_NOTICE;
 }
 
 const FOLLOW_UPS: Partial<Record<RuleCategory, string[]>> = {

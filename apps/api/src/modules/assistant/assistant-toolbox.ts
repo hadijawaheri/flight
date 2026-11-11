@@ -4,6 +4,7 @@ import {
   FARE_FAMILIES,
   FLIGHT_TYPES,
   flightIdSchema,
+  getAirport,
   isKnownLocationCode,
   isoDateSchema,
   locationLabel,
@@ -28,6 +29,7 @@ import {
   excessBaggageCard,
   genericRefundCard,
   hotelsNearAirportCard,
+  placeLabel,
   priceAdviceCard,
   routeNetworkCard,
   transferVehicleCard,
@@ -93,8 +95,8 @@ export const toolSchemas = {
     city: z.string().trim().toUpperCase().refine(isKnownLocationCode, "شهر ناشناخته است"),
   }),
   transfer_vehicle: z.object({
-    passengers: z.coerce.number().int().min(1).max(20),
-    bags: z.coerce.number().int().min(0).max(30).default(0),
+    passengers: z.coerce.number().int().min(1).max(500),
+    bags: z.coerce.number().int().min(0).max(500).default(0),
   }),
 } as const;
 
@@ -459,7 +461,16 @@ export class AssistantToolbox {
     const nearest = [...found]
       .sort((a, b) => a.distanceToAirportKm - b.distanceToAirportKm)
       .slice(0, 3);
-    const card = hotelsNearAirportCard(nearest[0]?.airportCode ?? parsed.data.city, nearest);
+    const measuredFrom = nearest[0]?.airportCode ?? parsed.data.city;
+    let card = hotelsNearAirportCard(measuredFrom, nearest);
+    // Asking about IKA returns Tehran hotels measured to Mehrabad; say so instead of implying IKA
+    const asked = getAirport(parsed.data.city);
+    if (asked && nearest.length > 0 && asked.code !== measuredFrom) {
+      card = {
+        ...card,
+        note: `فاصله‌ها تا ${placeLabel(measuredFrom)} است، نه ${placeLabel(asked.code)}. ${card.note ?? ""}`.trim(),
+      };
+    }
     return {
       content: JSON.stringify({ title: card.title, rows: card.rows, note: card.note }),
       isError: false,

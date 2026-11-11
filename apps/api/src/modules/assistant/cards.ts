@@ -254,7 +254,7 @@ export function cheapestFlightsCard(
  * Where an airport flies, split into domestic and international. Imam Khomeini has no domestic
  * flights, so for it one of the two rows is "none" — said plainly instead of left blank.
  */
-const placeLabel = (code: string): string => {
+export const placeLabel = (code: string): string => {
   const airport = getAirport(code);
   return airport ? airportLabel(airport) : locationLabel(code);
 };

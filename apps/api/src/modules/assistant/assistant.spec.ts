@@ -10,7 +10,11 @@ import { SimulatedHotelProvider } from "../../infra/hotel/simulated-hotel.provid
 import { BookingsService } from "../bookings/bookings.service.js";
 import { FlightsService } from "../flights/flights.service.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
-import { HOTEL_VERIFY_NOTICE, NOT_FOUND_ANSWER } from "./assistant.prompt.js";
+import {
+  HOTEL_VERIFY_NOTICE,
+  NOT_FOUND_ANSWER,
+  TRANSFER_VERIFY_NOTICE,
+} from "./assistant.prompt.js";
 import { AssistantService } from "./assistant.service.js";
 import { AssistantToolbox } from "./assistant-toolbox.js";
 import {
@@ -219,6 +223,34 @@ describe("hotel and transfer tools", () => {
     ]);
   });
 
+  it.each([
+    "می‌تونم با ۲ چمدان سوار هواپیما بشم؟",
+    "قانون بار برای ۲ نفر چیست",
+    "چون ۳ نفر هستیم بلیت ارزان می‌خواهیم",
+    "میتونم ۱۰ کیلو اضافه بار بخرم برای ۲ نفر؟",
+  ])("does not read %s as a transfer question", (message) => {
+    expect(
+      planOfflineCalls(message, {}, TODAY).some((call) => call.name === "transfer_vehicle"),
+    ).toBe(false);
+  });
+
+  it("still reads a whole-word van request", () => {
+    expect(planOfflineCalls("ون برای ۶ نفر می‌خواهم", {}, TODAY)).toEqual([
+      { name: "transfer_vehicle", input: { passengers: 6, bags: 0 } },
+    ]);
+  });
+
+  it("warns instead of failing for a group too big for any vehicle", async () => {
+    const outcome = await toolbox.run("transfer_vehicle", { passengers: 50, bags: 10 }, {});
+    expect(outcome.isError).toBe(false);
+    expect(outcome.card?.tone).toBe("warn");
+  });
+
+  it("says Imam Khomeini hotels are measured to Mehrabad", async () => {
+    const outcome = await toolbox.run("hotels_near_airport", { city: "IKA" }, {});
+    expect(outcome.card?.note).toContain("نه ");
+  });
+
   it("plans the hotel tool only when a city is named", () => {
     expect(
       planOfflineCalls("هتل نزدیک فرودگاه مشهد برای پرواز صبح زود", {}, TODAY).map(
@@ -280,6 +312,14 @@ describe("assistant (offline mode)", () => {
     const answer = await ask(offline, "برای پذیرش هتل زن و شوهر چه مدرکی لازم است؟");
     expect(answer.citations.map((citation) => citation.id)).toContain("hotel-id-documents");
     expect(answer.verifyNotice).toBe(HOTEL_VERIFY_NOTICE);
+  });
+
+  it("sends transfer questions to the transfer company, not the hotel", async () => {
+    const answer = await ask(offline, "پروازم تاخیر داشت راننده ترانسفر منتظر می‌ماند؟");
+    expect(answer.citations.map((citation) => citation.id)).toContain(
+      "transfer-waiting-and-delays",
+    );
+    expect(answer.verifyNotice).toBe(TRANSFER_VERIFY_NOTICE);
   });
 
   it("answers the four-suitcase transfer question with a vehicle card", async () => {

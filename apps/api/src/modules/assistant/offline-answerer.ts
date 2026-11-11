@@ -193,7 +193,8 @@ function countBefore(text: string, units: RegExp): number | null {
 
 /** "Which car for a transfer with 4 suitcases?" */
 function detectTransferVehicle(text: string): PlannedCall | null {
-  if (!/(ترانسفر|transfer|خودرو|ماشین|تاکسی|ون)/.test(text)) return null;
+  // Whole-word "ون" only: as a substring it hides in قانون, چون and میتونم
+  if (!/(ترانسفر|transfer|خودرو|ماشین|تاکسی|(?<!\p{L})ون(?!\p{L}))/u.test(text)) return null;
   const bags = countBefore(text, /(?:چمدان|ساک|bag)/);
   const passengers = countBefore(text, /(?:نفر|مسافر|passenger)/);
   if (bags === null && passengers === null) return null;
