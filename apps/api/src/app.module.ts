@@ -24,6 +24,7 @@ import { FlightProviderModule } from "./infra/flight/flight-provider.module.js";
 import { HotelProviderModule } from "./infra/hotel/hotel-provider.module.js";
 import { PaymentProviderModule } from "./infra/payment/payment-provider.module.js";
 import { SmsModule } from "./infra/sms/sms.module.js";
+import { TransferProviderModule } from "./infra/transfer/transfer-provider.module.js";
 import { AssistantModule } from "./modules/assistant/assistant.module.js";
 import { AuthModule } from "./modules/auth/auth.module.js";
 import { BookingsModule } from "./modules/bookings/bookings.module.js";
@@ -35,6 +36,7 @@ import { KnowledgeModule } from "./modules/knowledge/knowledge.module.js";
 import { PassengersModule } from "./modules/passengers/passengers.module.js";
 import { PaymentsModule } from "./modules/payments/payments.module.js";
 import { PriceAlertsModule } from "./modules/price-alerts/price-alerts.module.js";
+import { TransfersModule } from "./modules/transfers/transfers.module.js";
 import { UsersModule } from "./modules/users/users.module.js";
 
 @Module({
@@ -85,6 +87,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     PiiModule,
     FlightProviderModule,
     HotelProviderModule,
+    TransferProviderModule,
     PaymentProviderModule,
     LlmModule,
     SmsModule,
@@ -94,6 +97,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     PassengersModule,
     FlightsModule,
     HotelsModule,
+    TransfersModule,
     DealsModule,
     PriceAlertsModule,
     BookingsModule,
