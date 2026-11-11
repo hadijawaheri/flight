@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { Logger } from "nestjs-pino";
 
+import { clientIp } from "./common/http/client-ip.js";
 import type { Env } from "./config/env.js";
 
 // Shared by main.ts and e2e tests so tests exercise the real HTTP setup
@@ -15,6 +16,7 @@ export function configureApp(app: NestExpressApplication): void {
   app.set("trust proxy", 1);
   app.use(helmet());
   app.use(cookieParser());
+  app.use(clientIp(config.get("API_PROXY_SECRET", { infer: true })));
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
   app.enableCors({ origin: config.get("CORS_ORIGINS", { infer: true }), credentials: true });
   app.enableShutdownHooks();

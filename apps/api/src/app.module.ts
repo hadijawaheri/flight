@@ -5,13 +5,14 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD, APP_PIPE } from "@nestjs/core";
 import { JwtModule } from "@nestjs/jwt";
 import { MongooseModule } from "@nestjs/mongoose";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
 import { LoggerModule } from "nestjs-pino";
 import { stdTimeFunctions } from "pino";
 
 import { ClockModule } from "./common/clock/clock.module.js";
 import { PiiModule } from "./common/crypto/pii.module.js";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter.js";
+import { ClientIpThrottlerGuard } from "./common/guards/client-ip-throttler.guard.js";
 import { CrossSiteGuard } from "./common/guards/cross-site.guard.js";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard.js";
 import { RolesGuard } from "./common/guards/roles.guard.js";
@@ -102,7 +103,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_GUARD, useClass: CrossSiteGuard },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ClientIpThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

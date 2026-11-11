@@ -51,6 +51,11 @@ const envSchema = z
     // A public demo can keep the simulated gateway while sign-in uses real SMS codes
     ALLOW_SIMULATED_PAYMENTS: flag("false"),
     THROTTLE_ENABLED: flag("true"),
+    // Shared with the web app on Vercel; with it, rate limits follow the visitor's x-client-ip
+    API_PROXY_SECRET: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.string().min(32).optional(),
+    ),
 
     // Flights and payments run on simulated providers until real ones are connected
     FLIGHT_PROVIDER: z.enum(["simulation"]).default("simulation"),
