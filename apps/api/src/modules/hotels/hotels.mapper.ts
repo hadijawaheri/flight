@@ -66,7 +66,7 @@ export function toHotelOffer(
     checkIn: stay.checkIn,
     checkOut: stay.checkOut,
     nights: nightsBetween(stay.checkIn, stay.checkOut),
-    fromTotal: Math.min(...sellable.map((room) => room.total)),
+    fromTotal: sellable.length > 0 ? Math.min(...sellable.map((room) => room.total)) : null,
     breakfastAvailable: sellable.some((room) => room.mealPlan !== "ROOM_ONLY"),
     freeCancellationAvailable: sellable.some((room) => room.freeCancellationUntil !== null),
   };
@@ -81,6 +81,6 @@ export function toRoomHold(hold: RoomHold): RoomHoldDto {
     checkOut: hold.checkOut,
     rooms: hold.rooms,
     total: hold.total,
-    expiresAt: (hold.expiresAt ?? hold.createdAt).toISOString(),
+    expiresAt: hold.expiresAt?.toISOString() ?? null,
   };
 }
