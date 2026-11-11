@@ -4,6 +4,7 @@ import {
   FARE_FAMILIES,
   FLIGHT_TYPES,
   flightIdSchema,
+  getAirport,
   isKnownLocationCode,
   isoDateSchema,
   locationLabel,
@@ -17,6 +18,7 @@ import { z } from "zod";
 
 import { AppException } from "../../common/app-exception.js";
 import type { LlmTool } from "../../infra/ai/llm.provider.js";
+import { HotelProvider } from "../../infra/hotel/hotel.provider.js";
 import { BookingsService } from "../bookings/bookings.service.js";
 import { FlightsService } from "../flights/flights.service.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
@@ -26,8 +28,11 @@ import {
   cheapestFlightsCard,
   excessBaggageCard,
   genericRefundCard,
+  hotelsNearAirportCard,
+  placeLabel,
   priceAdviceCard,
   routeNetworkCard,
+  transferVehicleCard,
 } from "./cards.js";
 
 export interface ToolContext {
@@ -86,6 +91,13 @@ export const toolSchemas = {
     date: isoDateSchema,
     cabin: z.enum(CABINS).default("ECONOMY"),
   }),
+  hotels_near_airport: z.object({
+    city: z.string().trim().toUpperCase().refine(isKnownLocationCode, "شهر ناشناخته است"),
+  }),
+  transfer_vehicle: z.object({
+    passengers: z.coerce.number().int().min(1).max(500),
+    bags: z.coerce.number().int().min(0).max(500).default(0),
+  }),
 } as const;
 
 /** Tool declarations sent to the model. Names are the contract; descriptions steer when to call. */
@@ -93,7 +105,7 @@ export const LLM_TOOLS: LlmTool[] = [
   {
     name: "search_rules",
     description:
-      "Search the verified knowledge base of flight and airport rules (baggage, dangerous goods, documents, refunds, delays, check-in, children, health, seats, pets, how this platform works). Call this before answering any rules question.",
+      "Search the verified knowledge base of flight and airport rules (baggage, dangerous goods, documents, refunds, delays, check-in, children, health, seats, pets, hotel check-in and cancellation, airport transfers, how this platform works). Call this before answering any rules question.",
     input_schema: {
       type: "object",
       properties: { query: { type: "string", description: "Persian or English search phrase" } },
@@ -184,6 +196,26 @@ export const LLM_TOOLS: LlmTool[] = [
       required: ["origin", "destination", "date"],
     },
   },
+  {
+    name: "hotels_near_airport",
+    description:
+      "Hotels closest to a city's airport, with distance and check-out time. Use for a late-night arrival or an early-morning departure. city is an IATA or city code (THR, MHD, TEH...).",
+    input_schema: {
+      type: "object",
+      properties: { city: { type: "string" } },
+      required: ["city"],
+    },
+  },
+  {
+    name: "transfer_vehicle",
+    description:
+      "Which airport-transfer vehicle (sedan, van, VIP) fits a number of passengers and suitcases.",
+    input_schema: {
+      type: "object",
+      properties: { passengers: { type: "number" }, bags: { type: "number" } },
+      required: ["passengers"],
+    },
+  },
 ];
 
 const fail = (content: string): ToolOutcome => ({ content, isError: true, citationIds: [] });
@@ -198,6 +230,7 @@ export class AssistantToolbox {
     private readonly knowledge: KnowledgeService,
     private readonly flights: FlightsService,
     private readonly bookings: BookingsService,
+    private readonly hotels: HotelProvider,
   ) {}
 
   isTool(name: string): name is ToolName {
@@ -221,6 +254,10 @@ export class AssistantToolbox {
           return await this.cheapest(input);
         case "route_network":
           return this.routeNetwork(input);
+        case "hotels_near_airport":
+          return await this.hotelsNearAirport(input);
+        case "transfer_vehicle":
+          return this.transferVehicle(input);
       }
     } catch (error: unknown) {
       if (error instanceof AppException) return fail(error.message);
@@ -414,6 +451,43 @@ export class AssistantToolbox {
       isError: false,
       card,
       citationIds: [],
+    };
+  }
+
+  private async hotelsNearAirport(input: unknown): Promise<ToolOutcome> {
+    const parsed = toolSchemas.hotels_near_airport.safeParse(input);
+    if (!parsed.success) return fail(describeIssues(parsed.error));
+    const found = await this.hotels.search([parsed.data.city]);
+    const nearest = [...found]
+      .sort((a, b) => a.distanceToAirportKm - b.distanceToAirportKm)
+      .slice(0, 3);
+    const measuredFrom = nearest[0]?.airportCode ?? parsed.data.city;
+    let card = hotelsNearAirportCard(measuredFrom, nearest);
+    // Asking about IKA returns Tehran hotels measured to Mehrabad; say so instead of implying IKA
+    const asked = getAirport(parsed.data.city);
+    if (asked && nearest.length > 0 && asked.code !== measuredFrom) {
+      card = {
+        ...card,
+        note: `فاصله‌ها تا ${placeLabel(measuredFrom)} است، نه ${placeLabel(asked.code)}. ${card.note ?? ""}`.trim(),
+      };
+    }
+    return {
+      content: JSON.stringify({ title: card.title, rows: card.rows, note: card.note }),
+      isError: false,
+      card,
+      citationIds: ["hotel-checkin-checkout", "hotel-night-arrival"],
+    };
+  }
+
+  private transferVehicle(input: unknown): ToolOutcome {
+    const parsed = toolSchemas.transfer_vehicle.safeParse(input);
+    if (!parsed.success) return fail(describeIssues(parsed.error));
+    const card = transferVehicleCard(parsed.data.passengers, parsed.data.bags);
+    return {
+      content: JSON.stringify({ title: card.title, rows: card.rows, note: card.note }),
+      isError: false,
+      card,
+      citationIds: ["transfer-vehicle-capacity"],
     };
   }
 }

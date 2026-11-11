@@ -9,6 +9,7 @@ import {
   SEAT_ENTRIES,
 } from "./checkin-people-platform.js";
 import { DOCUMENT_ENTRIES, INTERNATIONAL_ENTRIES } from "./documents-intl.js";
+import { HOTEL_TRANSFER_ENTRIES } from "./hotels-transfers.js";
 import { REFUND_ENTRIES, RIGHTS_ENTRIES } from "./refunds-rights.js";
 
 export const KNOWLEDGE_ENTRIES: readonly KnowledgeEntry[] = [
@@ -23,5 +24,6 @@ export const KNOWLEDGE_ENTRIES: readonly KnowledgeEntry[] = [
   ...HEALTH_ENTRIES,
   ...SEAT_ENTRIES,
   ...PET_ENTRIES,
+  ...HOTEL_TRANSFER_ENTRIES,
   ...PLATFORM_ENTRIES,
 ];

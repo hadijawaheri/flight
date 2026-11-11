@@ -24,6 +24,9 @@ import {
   ROUTE_KIND_LABELS,
   ROUTE_KINDS,
   tomanToRial,
+  VEHICLE_CLASSES,
+  vehicleFits,
+  VEHICLES,
   wattHoursFromMah,
 } from "@flysmart/contracts";
 
@@ -251,7 +254,7 @@ export function cheapestFlightsCard(
  * Where an airport flies, split into domestic and international. Imam Khomeini has no domestic
  * flights, so for it one of the two rows is "none" — said plainly instead of left blank.
  */
-const placeLabel = (code: string): string => {
+export const placeLabel = (code: string): string => {
   const airport = getAirport(code);
   return airport ? airportLabel(airport) : locationLabel(code);
 };
@@ -274,6 +277,59 @@ export function routeNetworkCard(origin: string): AssistantCardDto {
     tone: "info",
     rows,
     note: "فقط پروازهای مستقیم این سرویس نمایش داده می‌شود؛ مسیرها دوطرفه‌اند.",
+    href: null,
+  };
+}
+
+export interface NearAirportHotel {
+  nameFa: string;
+  stars: number;
+  distanceToAirportKm: number;
+  checkOutTime: string;
+}
+
+/** Hotels closest to the airport, for a late arrival or an early-morning departure. */
+export function hotelsNearAirportCard(
+  airportCode: string,
+  hotels: readonly NearAirportHotel[],
+): AssistantCardDto {
+  return {
+    tool: "hotels_near_airport",
+    title: `هتل‌های نزدیک ${placeLabel(airportCode)}`,
+    tone: hotels.length > 0 ? "info" : "warn",
+    rows:
+      hotels.length > 0
+        ? hotels.map((hotel) => ({
+            label: `${hotel.nameFa} (${fa(hotel.stars)} ستاره)`,
+            value: `${fa(hotel.distanceToAirportKm)} کیلومتر تا فرودگاه، تخلیه ${hotel.checkOutTime}`,
+          }))
+        : [{ label: "نتیجه", value: "هتلی در این شهر پیدا نشد" }],
+    note: "برای پرواز صبح زود، تسویه‌ی حساب را شب قبل انجام دهید و ساعت پذیرش شبانه را از هتل تأیید کنید. فاصله‌ها تقریبی‌اند.",
+    href: null,
+  };
+}
+
+/** Which transfer vehicles fit a party; VEHICLE_CLASSES runs cheapest first, so the first fit is the suggestion. */
+export function transferVehicleCard(passengers: number, bags: number): AssistantCardDto {
+  const fitting = VEHICLE_CLASSES.filter((vehicle) => vehicleFits(vehicle, passengers, bags));
+  const suggested = fitting[0];
+  return {
+    tool: "transfer_vehicle",
+    title: suggested ? `خودروی مناسب: ${VEHICLES[suggested].nameFa}` : "یک خودرو کافی نیست",
+    tone: suggested ? "ok" : "warn",
+    rows: [
+      { label: "مسافر و چمدان", value: `${fa(passengers)} نفر، ${fa(bags)} چمدان` },
+      ...VEHICLE_CLASSES.map((vehicle) => {
+        const spec = VEHICLES[vehicle];
+        return {
+          label: spec.nameFa,
+          value: `${vehicleFits(vehicle, passengers, bags) ? "جا می‌شود" : "جا نمی‌شود"} (تا ${fa(spec.maxPassengers)} نفر و ${fa(spec.maxBags)} چمدان)`,
+        };
+      }),
+    ],
+    note: suggested
+      ? "ظرفیت‌ها برای چمدان معمولی است؛ کالسکه، ویلچر یا چمدان بزرگ را هنگام رزرو بنویسید."
+      : "گروه را در دو خودرو تقسیم کنید یا با پشتیبانی تماس بگیرید.",
     href: null,
   };
 }

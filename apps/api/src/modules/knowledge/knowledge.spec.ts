@@ -1,4 +1,10 @@
-import { BOOKING_HOLD_MINUTES, MAX_ACTIVE_ALERTS, RULE_CATEGORIES } from "@flysmart/contracts";
+import {
+  BOOKING_HOLD_MINUTES,
+  FREE_WAITING_MINUTES_AIRPORT,
+  MAX_ACTIVE_ALERTS,
+  RULE_CATEGORIES,
+  VEHICLES,
+} from "@flysmart/contracts";
 import { describe, expect, it } from "vitest";
 
 import { AppException } from "../../common/app-exception.js";
@@ -74,6 +80,13 @@ describe("retrieval", () => {
     ["ویزای ترکیه لازم است؟", "docs-international"],
     ["گذرنامه‌ام ۴ ماه اعتبار دارد می‌توانم به دبی بروم", "docs-international"],
     ["با بچه ۳ ساله به مشهد چه مدارکی؟", "docs-minors"],
+    ["ساعت تحویل اتاق هتل چند است", "hotel-checkin-checkout"],
+    ["پرواز ساعت ۲ شب می‌رسم هتل را از کدام شب بگیرم", "hotel-night-arrival"],
+    ["برای پذیرش هتل زن و شوهر چه مدرکی لازم است", "hotel-id-documents"],
+    ["تخت اضافه برای بچه در هتل", "hotel-children-extra-bed"],
+    ["لغو رزرو هتل جریمه دارد", "hotel-cancellation"],
+    ["پروازم تاخیر داشت راننده ترانسفر منتظر می‌ماند", "transfer-waiting-and-delays"],
+    ["ترانسفر با ۴ چمدان چه خودرویی", "transfer-vehicle-capacity"],
   ])("answers %s from %s", (query, expected) => {
     expect(top(query)).toBe(expected);
   });
@@ -161,6 +174,26 @@ describe("platform entries match the product", () => {
   it("states the active price-alert cap the API really enforces", () => {
     expect(service.entry("platform-price-alerts")?.details.join(" ")).toContain(
       `${faNumber.format(MAX_ACTIVE_ALERTS)} هشدار`,
+    );
+  });
+
+  it("tells travellers to confirm volatile hotel rules with the hotel itself", () => {
+    const hotel = KNOWLEDGE_ENTRIES.filter((entry) => entry.category === "HOTELS_TRANSFERS");
+    expect(hotel.length).toBeGreaterThanOrEqual(7);
+    for (const id of ["hotel-checkin-checkout", "hotel-id-documents", "hotel-children-extra-bed"]) {
+      const entry = service.entry(id);
+      expect(entry?.reliability).toBe("VOLATILE");
+      expect(entry?.verifyWith).toContain("هتل");
+    }
+  });
+
+  it("states the free waiting time and vehicle sizes the transfer API really uses", () => {
+    const waiting = service.entry("transfer-waiting-and-delays");
+    const text = [waiting?.summary, ...(waiting?.details ?? [])].join(" ");
+    expect(text).toContain(`${faNumber.format(FREE_WAITING_MINUTES_AIRPORT)} دقیقه`);
+    const capacity = service.entry("transfer-vehicle-capacity")?.summary ?? "";
+    expect(capacity).toContain(
+      `ون تا ${faNumber.format(VEHICLES.VAN.maxPassengers)} نفر و ${faNumber.format(VEHICLES.VAN.maxBags)} چمدان`,
     );
   });
 

@@ -157,6 +157,53 @@ function detectRouteNetwork(text: string): PlannedCall | null {
   return null;
 }
 
+/** "A hotel near Mashhad airport for an early flight" — needs both words and a named city. */
+function detectHotelsNearAirport(text: string): PlannedCall | null {
+  if (!/(هتل|hotel)/.test(text) || !/(فرودگاه|airport)/.test(text)) return null;
+  for (const match of text.matchAll(/([\p{L}‌]{3,}|[a-z]{3})/gu)) {
+    const word = match[1] ?? "";
+    if (/^(هتل|فرودگاه|نزدیک|برای|پرواز|hotel|airport)$/.test(word)) continue;
+    const city = cityCode(word) ?? airportNamed(word);
+    if (city) return { name: "hotels_near_airport", input: { city } };
+  }
+  return null;
+}
+
+const PERSIAN_COUNT_WORDS: Record<string, number> = {
+  یک: 1,
+  دو: 2,
+  سه: 3,
+  چهار: 4,
+  پنج: 5,
+  شش: 6,
+  هفت: 7,
+  هشت: 8,
+};
+
+function countBefore(text: string, units: RegExp): number | null {
+  const digits = numberBefore(text, units);
+  if (digits !== null) return digits;
+  // The lookbehind stops "نزدیک" from reading as "یک"
+  const word = new RegExp(
+    `(?<!\\p{L})(${Object.keys(PERSIAN_COUNT_WORDS).join("|")})\\s*(?:${units.source})`,
+    "u",
+  ).exec(text);
+  return word?.[1] ? (PERSIAN_COUNT_WORDS[word[1]] ?? null) : null;
+}
+
+/** "Which car for a transfer with 4 suitcases?" */
+function detectTransferVehicle(text: string): PlannedCall | null {
+  // Whole-word "ون" only: as a substring it hides in قانون, چون and میتونم
+  if (!/(ترانسفر|transfer|خودرو|ماشین|تاکسی|(?<!\p{L})ون(?!\p{L}))/u.test(text)) return null;
+  const bags = countBefore(text, /(?:چمدان|ساک|bag)/);
+  const passengers = countBefore(text, /(?:نفر|مسافر|passenger)/);
+  if (bags === null && passengers === null) return null;
+  return {
+    name: "transfer_vehicle",
+    input: { passengers: passengers ?? 1, bags: bags ?? 0 },
+  };
+}
+
 /** Returns the tool calls worth making for a message, most specific first. */
 export function planOfflineCalls(
   message: string,
@@ -170,6 +217,8 @@ export function planOfflineCalls(
     detectRefund(text, context),
     detectCheapest(text, today),
     detectRouteNetwork(text),
+    detectHotelsNearAirport(text),
+    detectTransferVehicle(text),
     detectPriceAdvice(text, context),
   ].filter((call): call is PlannedCall => call !== null);
   return calls;
@@ -182,6 +231,8 @@ export const CARD_TOOLS: ReadonlySet<AssistantTool> = new Set([
   "price_advice",
   "cheapest_flights",
   "route_network",
+  "hotels_near_airport",
+  "transfer_vehicle",
 ]);
 
 export function cardLead(card: AssistantCardDto): string {

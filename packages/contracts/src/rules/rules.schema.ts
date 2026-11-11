@@ -12,6 +12,7 @@ export const RULE_CATEGORIES = [
   "HEALTH",
   "SEATS",
   "PETS",
+  "HOTELS_TRANSFERS",
   "PLATFORM",
 ] as const;
 export type RuleCategory = (typeof RULE_CATEGORIES)[number];
@@ -28,6 +29,7 @@ export const RULE_CATEGORY_LABELS: Record<RuleCategory, string> = {
   HEALTH: "سلامت و نیازهای ویژه",
   SEATS: "صندلی",
   PETS: "حیوان خانگی",
+  HOTELS_TRANSFERS: "هتل و ترانسفر",
   PLATFORM: "خرید در پرواز پلاس",
 };
 
