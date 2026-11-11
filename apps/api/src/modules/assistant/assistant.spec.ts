@@ -1,14 +1,16 @@
 import type { RefundQuoteDto } from "@flysmart/contracts";
+import { normalizeDigits } from "@flysmart/contracts";
 import { describe, expect, it } from "vitest";
 
 import { FixedClock } from "../../common/clock/clock.js";
 import type { LlmRequest, LlmResponse } from "../../infra/ai/llm.provider.js";
 import { LlmError, LlmProvider } from "../../infra/ai/llm.provider.js";
 import { NullLlmProvider } from "../../infra/ai/null-llm.provider.js";
+import { SimulatedHotelProvider } from "../../infra/hotel/simulated-hotel.provider.js";
 import { BookingsService } from "../bookings/bookings.service.js";
 import { FlightsService } from "../flights/flights.service.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
-import { NOT_FOUND_ANSWER } from "./assistant.prompt.js";
+import { HOTEL_VERIFY_NOTICE, NOT_FOUND_ANSWER } from "./assistant.prompt.js";
 import { AssistantService } from "./assistant.service.js";
 import { AssistantToolbox } from "./assistant-toolbox.js";
 import {
@@ -17,6 +19,7 @@ import {
   excessBaggageCard,
   genericRefundCard,
   routeNetworkCard,
+  transferVehicleCard,
 } from "./cards.js";
 import { planOfflineCalls } from "./offline-answerer.js";
 
@@ -169,7 +172,12 @@ const bookingsStub = {
     return Promise.resolve({ ...quote, bookingId: id });
   },
 } as unknown as BookingsService;
-const toolbox = new AssistantToolbox(knowledge, unusedFlights, bookingsStub);
+const toolbox = new AssistantToolbox(
+  knowledge,
+  unusedFlights,
+  bookingsStub,
+  new SimulatedHotelProvider(),
+);
 
 class ScriptedLlm extends LlmProvider {
   readonly available = true;
@@ -192,6 +200,49 @@ const ask = (
   context?: { bookingId?: string },
   userId?: string,
 ) => service.ask({ message, history: [], context }, userId);
+
+describe("hotel and transfer tools", () => {
+  it("suggests the cheapest vehicle that fits and says when none does", () => {
+    expect(transferVehicleCard(2, 4).title).toContain("ون");
+    expect(transferVehicleCard(2, 2).title).toContain("سواری");
+    const tooMany = transferVehicleCard(9, 4);
+    expect(tooMany.tone).toBe("warn");
+    expect(tooMany.title).toBe("یک خودرو کافی نیست");
+  });
+
+  it("plans the vehicle tool from digits or Persian number words", () => {
+    expect(planOfflineCalls("ترانسفر با ۴ چمدان چه خودرویی می‌خواهد؟", {}, TODAY)).toEqual([
+      { name: "transfer_vehicle", input: { passengers: 1, bags: 4 } },
+    ]);
+    expect(planOfflineCalls("برای سه نفر و پنج چمدان ترانسفر می‌خواهم", {}, TODAY)).toEqual([
+      { name: "transfer_vehicle", input: { passengers: 3, bags: 5 } },
+    ]);
+  });
+
+  it("plans the hotel tool only when a city is named", () => {
+    expect(
+      planOfflineCalls("هتل نزدیک فرودگاه مشهد برای پرواز صبح زود", {}, TODAY).map(
+        (call) => call.input,
+      ),
+    ).toContainEqual({ city: "MHD" });
+    expect(
+      planOfflineCalls("هتل نزدیک فرودگاه", {}, TODAY).some(
+        (call) => call.name === "hotels_near_airport",
+      ),
+    ).toBe(false);
+  });
+
+  it("lists the hotels closest to the airport first", async () => {
+    const outcome = await toolbox.run("hotels_near_airport", { city: "MHD" }, {});
+    expect(outcome.isError).toBe(false);
+    const distances = (outcome.card?.rows ?? []).map((row) =>
+      Number(normalizeDigits(row.value).split(" ")[0]?.replace("٫", ".")),
+    );
+    expect(distances.length).toBeGreaterThan(0);
+    expect([...distances].sort((a, b) => a - b)).toEqual(distances);
+    expect(outcome.citationIds).toContain("hotel-checkin-checkout");
+  });
+});
 
 describe("assistant (offline mode)", () => {
   it("reports its mode", () => {
@@ -223,6 +274,24 @@ describe("assistant (offline mode)", () => {
     expect(answer.citations.map((citation) => citation.id)).toContain("docs-international");
     expect(answer.suggestions).not.toContain("برای پرواز خارجی چه مدارکی لازم است؟");
     expect(answer.suggestions.length).toBeGreaterThan(0);
+  });
+
+  it("answers a hotel documents question and tells the traveller to ask the hotel", async () => {
+    const answer = await ask(offline, "برای پذیرش هتل زن و شوهر چه مدرکی لازم است؟");
+    expect(answer.citations.map((citation) => citation.id)).toContain("hotel-id-documents");
+    expect(answer.verifyNotice).toBe(HOTEL_VERIFY_NOTICE);
+  });
+
+  it("answers the four-suitcase transfer question with a vehicle card", async () => {
+    const answer = await ask(offline, "ترانسفر با ۴ چمدان چه خودرویی می‌خواهد؟");
+    expect(answer.cards[0]?.tool).toBe("transfer_vehicle");
+    expect(answer.cards[0]?.title).toContain("ون");
+    expect(answer.citations.map((citation) => citation.id)).toContain("transfer-vehicle-capacity");
+  });
+
+  it("finds hotels near the airport for an early flight", async () => {
+    const answer = await ask(offline, "هتل نزدیک فرودگاه مشهد برای پرواز صبح زود");
+    expect(answer.cards.map((card) => card.tool)).toContain("hotels_near_airport");
   });
 
   it("greets and offers starters", async () => {

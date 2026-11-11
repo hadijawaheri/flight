@@ -12,8 +12,10 @@ import { Clock } from "../../common/clock/clock.js";
 import type { LlmContentBlock, LlmMessage } from "../../infra/ai/llm.provider.js";
 import { LlmError, LlmProvider } from "../../infra/ai/llm.provider.js";
 import { KnowledgeService } from "../knowledge/knowledge.service.js";
+import type { KnowledgeEntry } from "../knowledge/types.js";
 import {
   buildSystemPrompt,
+  HOTEL_VERIFY_NOTICE,
   NOT_FOUND_ANSWER,
   STARTER_QUESTIONS,
   VERIFY_NOTICE,
@@ -28,10 +30,20 @@ const MAX_MODEL_ROUNDS = 4;
 const MAX_ANSWER_TOKENS = 900;
 const GREETING = /^\s*(سلام|درود|hi|hello|hey)[\s!،.؟?]*$/i;
 
+/** Hotel rules vary by hotel, so the traveller is sent to the front desk instead of an airline. */
+function verifyNoticeFor(entries: readonly KnowledgeEntry[]): string | null {
+  const unsure = entries.filter((entry) => entry.reliability !== "STANDARD");
+  if (unsure.length === 0) return null;
+  return unsure.every((entry) => entry.category === "HOTELS_TRANSFERS")
+    ? HOTEL_VERIFY_NOTICE
+    : VERIFY_NOTICE;
+}
+
 const FOLLOW_UPS: Partial<Record<RuleCategory, string[]>> = {
   BAGGAGE: ["هزینه‌ی ۵ کیلو اضافه بار چقدر می‌شود؟", "چه چیزهایی را نباید در بار تحویلی بگذارم؟"],
   DANGEROUS_GOODS: ["پاوربانک ۱۰۰۰۰ میلی‌آمپر مجاز است؟", "مایعات در بار دستی چه محدودیتی دارند؟"],
   DOCUMENTS: ["برای پرواز خارجی چه مدارکی لازم است؟", "نام روی بلیت را چطور اصلاح کنم؟"],
+  HOTELS_TRANSFERS: ["ساعت تحویل اتاق هتل چند است؟", "ترانسفر با ۴ چمدان چه خودرویی می‌خواهد؟"],
   INTERNATIONAL: ["عوارض خروج چقدر است و از کجا بپرسم؟", "در ترانزیت چقدر زمان لازم است؟"],
   REFUNDS: ["اگر ۲ روز قبل پرواز لغو کنم چقدر جریمه می‌شوم؟", "تغییر تاریخ بلیت چقدر هزینه دارد؟"],
   DELAYS_RIGHTS: ["اگر ایرلاین پرواز را لغو کند چه حقی دارم؟"],
@@ -243,9 +255,7 @@ export class AssistantService {
       citations,
       cards: collected.cards,
       suggestions: suggestions.length > 0 ? suggestions : [...STARTER_QUESTIONS].slice(0, 3),
-      verifyNotice: entries.some((entry) => entry.reliability !== "STANDARD")
-        ? VERIFY_NOTICE
-        : null,
+      verifyNotice: verifyNoticeFor(entries),
     };
   }
 }
