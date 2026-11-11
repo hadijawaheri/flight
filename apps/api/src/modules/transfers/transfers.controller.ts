@@ -1,8 +1,9 @@
 import type { ApiResponse, TransferQuoteDto } from "@flysmart/contracts";
-import { Controller, Get, Query, Req } from "@nestjs/common";
+import { Controller, Get, Query } from "@nestjs/common";
 
+import { OptionalUser } from "../../common/decorators/current-user.decorator.js";
 import { Public } from "../../common/decorators/public.decorator.js";
-import type { AuthedRequest } from "../../common/types/auth.js";
+import type { AuthUser } from "../../common/types/auth.js";
 import { TransferQuoteQueryDto } from "./dto/transfers.dto.js";
 import { TransfersService } from "./transfers.service.js";
 
@@ -14,9 +15,9 @@ export class TransfersController {
   @Public()
   @Get("quote")
   async quote(
-    @Req() req: Partial<AuthedRequest>,
+    @OptionalUser() user: AuthUser | undefined,
     @Query() query: TransferQuoteQueryDto,
   ): Promise<ApiResponse<TransferQuoteDto>> {
-    return { data: await this.transfersService.quote(req.user?.id ?? null, query) };
+    return { data: await this.transfersService.quote(user?.id ?? null, query) };
   }
 }

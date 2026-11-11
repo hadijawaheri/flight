@@ -1,10 +1,4 @@
-import {
-  type Airport,
-  AIRPORTS,
-  getAirport,
-  randomBetween,
-  seededRandom,
-} from "@flysmart/contracts";
+import { type Airport, getAirport, randomBetween, seededRandom } from "@flysmart/contracts";
 
 import type { TransferZoneRecord } from "../transfer.provider.js";
 
@@ -59,8 +53,3 @@ export function findZone(zoneId: string): TransferZoneRecord | null {
   if (!airport || slot < 1 || slot > zoneCount(airport)) return null;
   return buildZone(airport, slot);
 }
-
-/** Every domestic airport has zones; used by tests and the assistant. */
-export const TRANSFER_AIRPORTS: readonly string[] = AIRPORTS.filter(
-  (airport) => airport.countryCode === "IR",
-).map((airport) => airport.code);
