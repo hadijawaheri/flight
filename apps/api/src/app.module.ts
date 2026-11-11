@@ -22,6 +22,7 @@ import { validateEnv } from "./config/env.js";
 import { HealthModule } from "./health/health.module.js";
 import { LlmModule } from "./infra/ai/llm.module.js";
 import { FlightProviderModule } from "./infra/flight/flight-provider.module.js";
+import { HotelProviderModule } from "./infra/hotel/hotel-provider.module.js";
 import { PaymentProviderModule } from "./infra/payment/payment-provider.module.js";
 import { SmsModule } from "./infra/sms/sms.module.js";
 import { AssistantModule } from "./modules/assistant/assistant.module.js";
@@ -29,6 +30,7 @@ import { AuthModule } from "./modules/auth/auth.module.js";
 import { BookingsModule } from "./modules/bookings/bookings.module.js";
 import { DealsModule } from "./modules/deals/deals.module.js";
 import { FlightsModule } from "./modules/flights/flights.module.js";
+import { HotelsModule } from "./modules/hotels/hotels.module.js";
 import { JobsModule } from "./modules/jobs/jobs.module.js";
 import { KnowledgeModule } from "./modules/knowledge/knowledge.module.js";
 import { PassengersModule } from "./modules/passengers/passengers.module.js";
@@ -85,6 +87,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     ClockModule,
     PiiModule,
     FlightProviderModule,
+    HotelProviderModule,
     PaymentProviderModule,
     LlmModule,
     SmsModule,
@@ -93,6 +96,7 @@ import { UsersModule } from "./modules/users/users.module.js";
     AuthModule,
     PassengersModule,
     FlightsModule,
+    HotelsModule,
     DealsModule,
     PriceAlertsModule,
     BookingsModule,

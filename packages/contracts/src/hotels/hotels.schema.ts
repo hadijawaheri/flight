@@ -31,6 +31,8 @@ export const MAX_HOTEL_NIGHTS = 30;
 export const MAX_HOTEL_ROOMS = 4;
 /** Same length as a flight seat hold, so both run out together at checkout. */
 export const HOTEL_HOLD_MINUTES = 15;
+/** Live unpaid room holds one traveller may keep, so one account cannot block a hotel. */
+export const MAX_LIVE_ROOM_HOLDS = 3;
 
 const booleanFlag = z
   .union([z.boolean(), z.enum(["true", "false", "1", "0"])])
@@ -89,6 +91,17 @@ export type HotelSearchQuery = z.infer<typeof hotelSearchQuerySchema>;
 
 export const hotelStayQuerySchema = z.object(stayFields).superRefine(refineStay);
 export type HotelStayQuery = z.infer<typeof hotelStayQuerySchema>;
+
+export const createRoomHoldSchema = z
+  .object({
+    hotelId: z.string().trim().min(1),
+    roomId: z.string().trim().min(1),
+    ...stayFields,
+    /** The total the traveller saw; a different current price answers 409 FARE_CHANGED. */
+    quotedTotal: z.coerce.number().int().positive(),
+  })
+  .superRefine(refineStay);
+export type CreateRoomHoldInput = z.infer<typeof createRoomHoldSchema>;
 
 /* ---------------------------------- cancellation ---------------------------------- */
 
@@ -153,8 +166,8 @@ export interface HotelOfferDto {
   checkIn: string;
   checkOut: string;
   nights: number;
-  /** Cheapest room total for the whole stay and every requested room, rial. */
-  fromTotal: number;
+  /** Cheapest room total for the whole stay and every requested room, rial; null when sold out. */
+  fromTotal: number | null;
   breakfastAvailable: boolean;
   freeCancellationAvailable: boolean;
 }
@@ -168,4 +181,17 @@ export interface HotelSearchResultDto {
 
 export interface HotelDetailDto extends HotelOfferDto {
   rooms: RoomOfferDto[];
+}
+
+/** Rooms set aside for a traveller while they finish checkout. */
+export interface RoomHoldDto {
+  id: string;
+  hotelId: string;
+  roomId: string;
+  checkIn: string;
+  checkOut: string;
+  rooms: number;
+  total: number;
+  /** Null once the room is paid for and no longer times out. */
+  expiresAt: string | null;
 }
