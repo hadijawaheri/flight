@@ -31,6 +31,8 @@ export const MAX_HOTEL_NIGHTS = 30;
 export const MAX_HOTEL_ROOMS = 4;
 /** Same length as a flight seat hold, so both run out together at checkout. */
 export const HOTEL_HOLD_MINUTES = 15;
+/** Live unpaid room holds one traveller may keep, so one account cannot block a hotel. */
+export const MAX_LIVE_ROOM_HOLDS = 3;
 
 const booleanFlag = z
   .union([z.boolean(), z.enum(["true", "false", "1", "0"])])
@@ -164,8 +166,8 @@ export interface HotelOfferDto {
   checkIn: string;
   checkOut: string;
   nights: number;
-  /** Cheapest room total for the whole stay and every requested room, rial. */
-  fromTotal: number;
+  /** Cheapest room total for the whole stay and every requested room, rial; null when sold out. */
+  fromTotal: number | null;
   breakfastAvailable: boolean;
   freeCancellationAvailable: boolean;
 }
@@ -190,5 +192,6 @@ export interface RoomHoldDto {
   checkOut: string;
   rooms: number;
   total: number;
-  expiresAt: string;
+  /** Null once the room is paid for and no longer times out. */
+  expiresAt: string | null;
 }
