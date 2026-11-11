@@ -32,6 +32,7 @@
 4. Environment Variables (هم Build هم Runtime):
    - `INTERNAL_API_URL` = `https://api.<domain>`
    - `NEXT_PUBLIC_SITE_URL` = آدرس نهایی سایت
+   - `API_PROXY_SECRET` = همان مقدار `apps/api/.env` سرور (`openssl rand -base64 48`). بدون آن همه‌ی بازدیدکننده‌ها یک محدودیت نرخ مشترک دارند، چون همه از IP خود Vercel می‌آیند (ADR 0016).
 5. Deploy. بعد از آن `/api/health` و ورود را روی آدرس Vercel امتحان کنید.
 6. چون rewrite در زمان build ثبت می‌شود، با تغییر `INTERNAL_API_URL` باید دوباره Deploy کنید.
 

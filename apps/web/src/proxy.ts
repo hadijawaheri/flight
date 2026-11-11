@@ -2,6 +2,7 @@ import { COOKIE_NAMES } from "@flysmart/contracts";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+import { clientIpHeaders, withClientIp } from "@/lib/api/client-ip";
 import { buildCsp, createNonce, NONCE_HEADER } from "@/lib/csp";
 
 const API_ORIGIN = process.env.INTERNAL_API_URL ?? "http://localhost:7781";
@@ -21,7 +22,7 @@ function redirectToSignIn(request: NextRequest): NextResponse {
 async function refreshAndContinue(request: NextRequest, forwarded: Headers): Promise<NextResponse> {
   const res = await fetch(`${API_ORIGIN}/v1/auth/refresh`, {
     method: "POST",
-    headers: { cookie: request.headers.get("cookie") ?? "" },
+    headers: { cookie: request.headers.get("cookie") ?? "", ...clientIpHeaders(request.headers) },
     cache: "no-store",
   }).catch(() => null);
   if (!res?.ok) return redirectToSignIn(request);
@@ -44,6 +45,11 @@ async function refreshAndContinue(request: NextRequest, forwarded: Headers): Pro
 
 // Optimistic check only: real authorization lives in the API guards and the server-side DAL
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  // The /api rewrite in next.config.ts forwards these headers to the API
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.next({ request: { headers: withClientIp(request.headers) } });
+  }
+
   const nonce = createNonce();
   const csp = buildCsp(nonce, process.env.NODE_ENV === "development");
   const forwarded = new Headers(request.headers);
@@ -74,5 +80,6 @@ async function route(request: NextRequest, forwarded: Headers): Promise<NextResp
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|.*\\..*).*)"],
+  // /api/* only to tell the API who the visitor is (see lib/api/client-ip.ts)
+  matcher: ["/api/:path*", "/((?!api|_next/static|_next/image|.*\\..*).*)"],
 };

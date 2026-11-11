@@ -1,8 +1,9 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { env } from "../env";
+import { clientIpHeaders } from "./client-ip";
 import { parseResponse } from "./parse";
 
 interface ServerApiInit extends RequestInit {
@@ -12,10 +13,17 @@ interface ServerApiInit extends RequestInit {
 
 export async function serverApi<T>(path: string, init: ServerApiInit = {}): Promise<T> {
   const { revalidate, ...rest } = init;
-  const cookieHeader = (await cookies()).toString();
+  const [cookieStore, incoming] = await Promise.all([cookies(), headers()]);
   const res = await fetch(`${env.INTERNAL_API_URL}/v1${path}`, {
     ...rest,
-    headers: { cookie: cookieHeader, "Content-Type": "application/json", ...rest.headers },
+    headers: {
+      cookie: cookieStore.toString(),
+      "Content-Type": "application/json",
+      // Otherwise every visitor shares this server's rate limit (lib/api/client-ip.ts). Cached public
+      // reads skip it: the address would split the cache per visitor.
+      ...(revalidate === undefined ? clientIpHeaders(incoming) : {}),
+      ...rest.headers,
+    },
     ...(revalidate === undefined ? { cache: "no-store" as const } : { next: { revalidate } }),
   });
   return parseResponse<T>(res);
